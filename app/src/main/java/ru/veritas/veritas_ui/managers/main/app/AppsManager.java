@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AppsManager {
 
@@ -17,23 +19,55 @@ public class AppsManager {
     private PackageManager packageManager;
     private String ownPackageName;
 
+    private List<AppData> cachedApps;
+    private boolean isCacheValid = false;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private static final String TAG = "AppsManager";
+
     public AppsManager(Context context) {
         this.context = context;
         this.packageManager = context.getPackageManager();
         this.ownPackageName = context.getPackageName();
     }
-
     /**
      * Загружаем пользовательские приложения
      */
-    public ArrayList<AppData> loadUserApps() {
-        ArrayList<AppData> apps = new ArrayList<>();
+    /**
+     * Загружаем пользовательские приложения (асинхронно)
+     */
+    public void loadUserAppsAsync(AppLoadCallback callback) {
+        if (isCacheValid && cachedApps != null) {
+            callback.onAppsLoaded(cachedApps);
+            return;
+        }
+
+        executorService.execute(() -> {
+            List<AppData> apps = loadUserAppsSync();
+            cachedApps = apps;
+            isCacheValid = true;
+
+            ((android.app.Activity) context).runOnUiThread(() -> {
+                callback.onAppsLoaded(apps);
+            });
+        });
+    }
+
+    /**
+     * Синхронная загрузка приложений
+     */
+    public List<AppData> loadUserAppsSync() {
+        List<AppData> apps = new ArrayList<>();
 
         // Получаем ВСЕ установленные приложения
-        List<ApplicationInfo> allApps = packageManager.getInstalledApplications(0);
+        List<ApplicationInfo> allApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
 
         for (ApplicationInfo appInfo : allApps) {
             try {
+                // Пропускаем наше собственное приложение
+                if (appInfo.packageName.equals(ownPackageName)) {
+                    continue;
+                }
+
                 // Пропускаем системные приложения без пользовательского интерфейса
                 if (!shouldShowApp(appInfo)) {
                     continue;
@@ -58,9 +92,23 @@ public class AppsManager {
             }
         }
 
+        // Сортируем по алфавиту
+        apps.sort((a, b) -> a.getAppName().compareToIgnoreCase(b.getAppName()));
+
         return apps;
     }
 
+    /**
+     * Очистить кэш
+     */
+    public void invalidateCache() {
+        isCacheValid = false;
+        cachedApps = null;
+    }
+
+    public interface AppLoadCallback {
+        void onAppsLoaded(List<AppData> apps);
+    }
     /**
      * Определяем, нужно ли показывать приложение
      */

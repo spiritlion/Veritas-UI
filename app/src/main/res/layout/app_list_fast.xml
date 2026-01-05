@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -34,21 +33,27 @@
 
     </LinearLayout>
 
-    <!-- ProgressBar для индикации загрузки -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="32dp"
-        android:visibility="gone" />
-
-    <!-- Кастомный RecyclerView -->
-    <ru.veritas.veritas_ui.ui.view.VerticalScrollRecyclerView
-        android:id="@+id/appRecyclerView"
+    <!-- Контейнер для быстрой загрузки -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="8dp" />
+        android:layout_weight="1">
+
+        <!-- ProgressBar поверх RecyclerView -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <!-- Кастомный RecyclerView -->
+        <ru.veritas.veritas_ui.ui.view.VerticalScrollRecyclerView
+            android:id="@+id/appRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp" />
+
+    </FrameLayout>
 
 </LinearLayout>

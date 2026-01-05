@@ -12,6 +12,8 @@ import androidx.fragment.app.Fragment;
 
 import ru.veritas.veritas_ui.LauncherActivity;
 import ru.veritas.veritas_ui.R;
+import ru.veritas.veritas_ui.managers.ui.GestureRecordingManager;
+import ru.veritas.veritas_ui.ui.ViewType;
 
 public class MainFragment extends Fragment {
 
@@ -20,25 +22,31 @@ public class MainFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.main_view, container, false);
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+        View view = inflater.inflate(R.layout.main_view, container, false);
 
         Button btnShowApps = view.findViewById(R.id.btnShowApps);
-        Button btnSettings = view.findViewById(R.id.btnSettings);
-
         btnShowApps.setOnClickListener(v -> {
             if (getActivity() instanceof LauncherActivity) {
-                ((LauncherActivity) getActivity()).switchToPage(1);
+                ((LauncherActivity) getActivity()).switchToPage(ViewType.AppList);
             }
         });
 
-        btnSettings.setOnClickListener(v -> {
-            // TODO: Добавить переход на страницу настроек
-            // ((LauncherActivity) getActivity()).switchToPage(2);
+        // Настраиваем жесты для всего фрагмента
+        GestureRecordingManager.setupVerticalSwipe(view, new GestureRecordingManager.OnSwipeListener() {
+            @Override
+            public void onSwipeDown() {
+                // Свайп вниз переходит к приложениям
+                if (getActivity() instanceof LauncherActivity) {
+                    ((LauncherActivity) getActivity()).switchToPage(ViewType.AppList);
+                }
+            }
+
+            @Override
+            public void onSwipeUp() {
+                // Свайп вверх на главном экране - ничего не делаем
+            }
         });
+
+        return view;
     }
 }

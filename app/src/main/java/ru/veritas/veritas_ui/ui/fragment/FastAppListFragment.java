@@ -24,21 +24,26 @@ import ru.veritas.veritas_ui.ui.ViewType;
 import ru.veritas.veritas_ui.ui.view.AppListView;
 import ru.veritas.veritas_ui.ui.view.VerticalScrollRecyclerView;
 
-public class AppListFragment extends Fragment {
+public class FastAppListFragment extends Fragment {
 
     private VerticalScrollRecyclerView appRecyclerView;
     private AppListView appListView;
-    private List<AppData> arrayOfApp = new ArrayList<>();
+    private List<AppData> cachedApps = new ArrayList<>();
     private AppsManager appsManager;
     private OnAppClickListener onAppClickListener;
-    private ProgressBar progressBar;
     private Button btnBack;
 
-    // Флаг для отслеживания загрузки
-    private boolean isLoading = false;
+    private static final String ARG_APPS = "cached_apps";
 
     public interface OnAppClickListener {
         void onAppClick(String packageName);
+    }
+
+    public static FastAppListFragment newInstance(List<AppData> apps) {
+        FastAppListFragment fragment = new FastAppListFragment();
+        Bundle args = new Bundle();
+        // Можно передать кэшированные данные через аргументы
+        return fragment;
     }
 
     @Override
@@ -54,31 +59,23 @@ public class AppListFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.app_list, container, false);
-
-        appRecyclerView = view.findViewById(R.id.appRecyclerView);
-        btnBack = view.findViewById(R.id.btnBack);
-        progressBar = view.findViewById(R.id.progressBar);
-
-        return view;
+        return inflater.inflate(R.layout.app_list_fast, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Сразу показываем ProgressBar
-        if (progressBar != null) {
-            progressBar.setVisibility(View.VISIBLE);
-        }
+        appRecyclerView = view.findViewById(R.id.appRecyclerView);
+        btnBack = view.findViewById(R.id.btnBack);
 
-        // Устанавливаем GridLayoutManager с 4 столбцами
+        // Быстрая инициализация RecyclerView с пустым адаптером
         int spanCount = 4;
         GridLayoutManager layoutManager = new GridLayoutManager(getContext(), spanCount);
         appRecyclerView.setLayoutManager(layoutManager);
 
-        // Создаем пустой адаптер
-        appListView = new AppListView(getContext(), new ArrayList<>(),
+        // Создаем пустой адаптер сразу
+        appListView = new AppListView(getContext(), cachedApps,
                 packageName -> {
                     if (onAppClickListener != null) {
                         onAppClickListener.onAppClick(packageName);
@@ -87,37 +84,32 @@ public class AppListFragment extends Fragment {
 
         appRecyclerView.setAdapter(appListView);
 
-        // Загружаем приложения
-        loadAppsAsync();
-
         // Кнопка назад
         btnBack.setOnClickListener(v -> {
             if (getActivity() instanceof LauncherActivity) {
                 ((LauncherActivity) getActivity()).switchToPage(ViewType.Main);
             }
         });
+
+        // Загружаем приложения (если есть кэш, показываем сразу)
+        loadAppsWithCache();
     }
 
-    private void loadAppsAsync() {
-        if (isLoading) return;
+    private void loadAppsWithCache() {
+        if (appsManager == null) {
+            appsManager = new AppsManager(getContext());
+        }
 
-        isLoading = true;
-        appsManager = new AppsManager(getContext());
-
+        // Пытаемся получить из кэша
         appsManager.loadUserAppsAsync(new AppsManager.AppLoadCallback() {
             @Override
             public void onAppsLoaded(List<AppData> apps) {
-                arrayOfApp = apps;
-                isLoading = false;
+                cachedApps = apps;
 
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        if (progressBar != null) {
-                            progressBar.setVisibility(View.GONE);
-                        }
-
                         if (appListView != null) {
-                            appListView.updateApps(arrayOfApp);
+                            appListView.updateApps(cachedApps);
                         }
                     });
                 }
@@ -128,20 +120,7 @@ public class AppListFragment extends Fragment {
     public void refreshAppList() {
         if (appsManager != null) {
             appsManager.invalidateCache();
+            loadAppsWithCache();
         }
-        loadAppsAsync();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Опционально: обновлять список при возвращении
-        // refreshAppList();
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        isLoading = false;
     }
 }

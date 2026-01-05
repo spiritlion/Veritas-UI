@@ -3,15 +3,16 @@ package ru.veritas.veritas_ui;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
 import ru.veritas.veritas_ui.managers.main.app.AppsManager;
-import ru.veritas.veritas_ui.managers.ui.AnimationManager;
+import ru.veritas.veritas_ui.ui.ViewType;
 import ru.veritas.veritas_ui.ui.fragment.MainFragment;
 import ru.veritas.veritas_ui.ui.fragment.AppListFragment;
-import ru.veritas.veritas_ui.ui.ViewPagerAdapter;
 
 /**
  * Главный класс лаунчера
@@ -21,6 +22,10 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
     private ViewPager2 viewPager;
     private AppsManager appsManager;
     private static final String TAG = "Veritas UI";
+    private LauncherPagerAdapter adapter;
+
+    // Флаг для отслеживания предзагрузки
+    private boolean isAppListPreloaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,21 +38,32 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
         // Устанавливаем вертикальную ориентацию
         viewPager.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
 
-        // Создаем фрагменты для ViewPager
-        Fragment[] fragments = new Fragment[] {
-                new MainFragment(),
-                new AppListFragment()
-        };
-
-        // Настраиваем адаптер
-        ViewPagerAdapter adapter = new ViewPagerAdapter(this, fragments);
+        // Создаем и настраиваем адаптер
+        adapter = new LauncherPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
-        // Можно включить/выключить пользовательскую прокрутку
-        viewPager.setUserInputEnabled(true); // true - разрешить свайп, false - только кнопками
+        // Включаем пользовательскую прокрутку
+        viewPager.setUserInputEnabled(true);
+
+        // Предзагружаем данные для AppListFragment
+        preloadAppListData();
 
         // Настраиваем переходы между страницами
         setupViewPager();
+    }
+
+    /**
+     * Предзагрузка данных для списка приложений
+     */
+    private void preloadAppListData() {
+        if (!isAppListPreloaded) {
+            new Thread(() -> {
+                // Синхронно загружаем приложения в фоне
+                appsManager.loadUserAppsSync();
+                isAppListPreloaded = true;
+                Log.d(TAG, "Данные приложений предзагружены");
+            }).start();
+        }
     }
 
     private void setupViewPager() {
@@ -56,26 +72,33 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
-                // Можно добавить логику при смене страницы
                 Log.d(TAG, "Текущая страница: " + position);
 
-                // Если нужно обновлять список приложений при переходе на страницу
-                if (position == 1) {
-                    refreshAppList();
+                // При переходе на страницу приложений - предзагружаем данные если нужно
+                if (position == 1 && !isAppListPreloaded) {
+                    preloadAppListData();
                 }
             }
         });
-
-        // Настраиваем анимации (опционально)
-//         viewPager.setPageTransformer(new AnimationManager.VerticalDepthPageTransformer()); !!!ОПАСНО РАСКОМИЧИВАТЬ, ПОКА АНИМАЦИЯ НЕ НАСТРОЕНА ПРАВИЛЬНО!!!
     }
 
     /**
      * Метод для переключения на определенную страницу
      */
-    public void switchToPage(int pageIndex) { // TODO поменять методику смена view
+    public void switchToPage(int pageIndex) {
         if (pageIndex >= 0 && pageIndex < viewPager.getAdapter().getItemCount()) {
-            viewPager.setCurrentItem(pageIndex, true); // true для анимации
+            viewPager.setCurrentItem(pageIndex, true);
+        }
+    }
+
+    public void switchToPage(ViewType viewType) {
+        switch (viewType) {
+            case Main:
+                switchToPage(0);
+            case AppList:
+                switchToPage(1);
+            case Settings:
+                // TODO
         }
     }
 
@@ -87,30 +110,50 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
         appsManager.launchApp(this, packageName);
     }
 
-    /**
-     * Получить текущую страницу
-     */
-    public int getCurrentPage() {
-        return viewPager.getCurrentItem();
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        // Обновляем список приложений при возвращении, если открыта страница с приложениями
+        // При возвращении в лаунчер - предзагружаем данные
         if (viewPager.getCurrentItem() == 1) {
-            refreshAppList();
+            preloadAppListData();
         }
     }
 
-    private void refreshAppList() {
-        // Обновляем список приложений в AppListFragment
-        // Нужно передать команду фрагменту
-        Fragment currentFragment = getSupportFragmentManager()
-                .findFragmentByTag("f" + viewPager.getCurrentItem());
+    /**
+     * Кастомный адаптер для ViewPager с оптимизациями
+     */
+    private static class LauncherPagerAdapter extends FragmentStateAdapter {
 
-        if (currentFragment instanceof AppListFragment) {
-            ((AppListFragment) currentFragment).refreshAppList();
+        public LauncherPagerAdapter(AppCompatActivity activity) {
+            super(activity);
+        }
+
+        @NonNull
+        @Override
+        public Fragment createFragment(int position) {
+            switch (position) {
+                case 0:
+                    return new MainFragment();
+                case 1:
+                    return new AppListFragment();
+                default:
+                    throw new IllegalArgumentException("Invalid position: " + position);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return 2;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public boolean containsItem(long itemId) {
+            return itemId == 0 || itemId == 1;
         }
     }
 }
