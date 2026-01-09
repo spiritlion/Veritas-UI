@@ -1,27 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="4dp">
+    android:padding="2dp">
 
-    <ImageView
-        android:id="@+id/desktopAppIcon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:scaleType="fitCenter" />
-
-    <TextView
-        android:id="@+id/desktopAppName"
+    <LinearLayout
+        android:id="@+id/appContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="10sp"
-        android:maxWidth="60dp"
-        android:maxLines="2"
-        android:ellipsize="end"
+        android:orientation="vertical"
         android:gravity="center"
-        android:textAlignment="center"
-        android:layout_marginTop="2dp" />
+        android:padding="8dp"
+        android:background="@drawable/desktop_item_background">
 
-</LinearLayout>
+        <ImageView
+            android:id="@+id/desktopAppIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/desktopAppName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="10sp"
+            android:maxWidth="60dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:textAlignment="center"
+            android:layout_marginTop="2dp" />
+
+    </LinearLayout>
+
+    <!-- Кнопка удаления (появляется при долгом нажатии) -->
+    <ImageView
+        android:id="@+id/btnRemove"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@android:drawable/ic_delete"
+        android:background="@android:color/white"
+        android:visibility="gone"
+        android:layout_gravity="top|end" />
+
+</FrameLayout>

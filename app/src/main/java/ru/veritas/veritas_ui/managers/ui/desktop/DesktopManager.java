@@ -107,4 +107,97 @@ public class DesktopManager {
 
         return desktopApps;
     }
+
+    /**
+     * Перемещает элемент с одной позиции на другую
+     */
+    public boolean moveItem(int fromX, int fromY, int toX, int toY) {
+        List<DesktopItem> items = getDesktopItems();
+        boolean moved = false;
+
+        for (DesktopItem item : items) {
+            if (item.getPositionX() == fromX && item.getPositionY() == fromY) {
+                item.setPositionX(toX);
+                item.setPositionY(toY);
+                moved = true;
+                break;
+            }
+        }
+
+        if (moved) {
+            saveDesktopItems(items);
+        }
+
+        return moved;
+    }
+
+
+    /**
+     * Проверяем, свободна ли позиция
+     */
+    public boolean isPositionFree(int x, int y) {
+        List<DesktopItem> items = getDesktopItems();
+        for (DesktopItem item : items) {
+            if (item.getPositionX() == x && item.getPositionY() == y) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Находим ближайшую свободную позицию
+     */
+    public int[] findFreePosition() {
+        List<DesktopItem> items = getDesktopItems();
+
+        // Простой поиск первой свободной позиции
+        for (int y = 0; y < 6; y++) {
+            for (int x = 0; x < 4; x++) {
+                boolean occupied = false;
+                for (DesktopItem item : items) {
+                    if (item.getPositionX() == x && item.getPositionY() == y) {
+                        occupied = true;
+                        break;
+                    }
+                }
+                if (!occupied) {
+                    return new int[]{x, y};
+                }
+            }
+        }
+
+        // Если все занято, возвращаем позицию за пределами
+        return new int[]{-1, -1};
+    }
+
+    /**
+     * Удаляем элемент с указанной позиции
+     */
+    public boolean removeItem(int x, int y) {
+        List<DesktopItem> items = getDesktopItems();
+        boolean removed = false;
+
+        for (int i = items.size() - 1; i >= 0; i--) {
+            DesktopItem item = items.get(i);
+            if (item.getPositionX() == x && item.getPositionY() == y) {
+                items.remove(i);
+                removed = true;
+                break;
+            }
+        }
+
+        if (removed) {
+            saveDesktopItems(items);
+        }
+
+        return removed;
+    }
+
+    public void clearDesktop() {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove(KEY_ITEMS);
+        editor.apply();
+    }
+
 }

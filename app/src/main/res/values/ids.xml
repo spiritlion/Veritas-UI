@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Для Drag & Drop -->
+    <item type="id" name="grid_position" />
+    <item type="id" name="desktop_item" />
+    <item type="id" name="item_grid_x" />
+    <item type="id" name="item_grid_y" />
+    <item type="id" name="item_package" />
+</resources>
