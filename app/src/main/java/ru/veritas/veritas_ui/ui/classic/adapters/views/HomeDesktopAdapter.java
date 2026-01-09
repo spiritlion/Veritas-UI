@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.ui.view;
+package ru.veritas.veritas_ui.ui.classic.adapters.views;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -6,24 +6,22 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
 
-import ru.veritas.veritas_ui.R;
-
 /**
  * Кастомный View для главного экрана (если понадобится)
  */
-public class MainView extends LinearLayout {
+public class HomeDesktopAdapter extends LinearLayout {
 
-    public MainView(Context context) {
+    public HomeDesktopAdapter(Context context) {
         super(context);
         init(context);
     }
 
-    public MainView(Context context, @Nullable AttributeSet attrs) {
+    public HomeDesktopAdapter(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    public MainView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public HomeDesktopAdapter(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }

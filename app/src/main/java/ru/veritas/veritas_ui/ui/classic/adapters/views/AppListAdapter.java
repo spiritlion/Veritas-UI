@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.ui.view;
+package ru.veritas.veritas_ui.ui.classic.adapters.views;
 
 import android.content.Context;
 import android.graphics.ColorMatrix;
@@ -18,7 +18,7 @@ import java.util.List;
 import ru.veritas.veritas_ui.managers.main.app.AppData;
 import ru.veritas.veritas_ui.R;
 
-public class AppListView extends RecyclerView.Adapter<AppListView.ViewHolder> {
+public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHolder> {
 
     private Context context;
     private List<AppData> apps;
@@ -28,7 +28,7 @@ public class AppListView extends RecyclerView.Adapter<AppListView.ViewHolder> {
         void onItemClick(String packageName);
     }
 
-    public AppListView(Context context, List<AppData> apps, OnItemClickListener listener) {
+    public AppListAdapter(Context context, List<AppData> apps, OnItemClickListener listener) {
         this.context = context;
         this.apps = apps;
         this.onItemClickListener = listener;

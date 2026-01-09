@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.ui.fragment;
+package ru.veritas.veritas_ui.ui.classic.fragment;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -21,29 +21,24 @@ import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.managers.main.app.AppData;
 import ru.veritas.veritas_ui.managers.main.app.AppsManager;
 import ru.veritas.veritas_ui.ui.ViewType;
-import ru.veritas.veritas_ui.ui.view.AppListView;
-import ru.veritas.veritas_ui.ui.view.VerticalScrollRecyclerView;
+import ru.veritas.veritas_ui.ui.classic.adapters.views.AppListAdapter;
+import ru.veritas.veritas_ui.ui.classic.adapters.VerticalScrollRecyclerView;
 
-public class FastAppListFragment extends Fragment {
+public class AppListFragment extends Fragment {
 
     private VerticalScrollRecyclerView appRecyclerView;
-    private AppListView appListView;
-    private List<AppData> cachedApps = new ArrayList<>();
+    private AppListAdapter appListAdapter;
+    private List<AppData> arrayOfApp = new ArrayList<>();
     private AppsManager appsManager;
     private OnAppClickListener onAppClickListener;
+    private ProgressBar progressBar;
     private Button btnBack;
 
-    private static final String ARG_APPS = "cached_apps";
+    // Флаг для отслеживания загрузки
+    private boolean isLoading = false;
 
     public interface OnAppClickListener {
         void onAppClick(String packageName);
-    }
-
-    public static FastAppListFragment newInstance(List<AppData> apps) {
-        FastAppListFragment fragment = new FastAppListFragment();
-        Bundle args = new Bundle();
-        // Можно передать кэшированные данные через аргументы
-        return fragment;
     }
 
     @Override
@@ -59,30 +54,41 @@ public class FastAppListFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.app_list_fast, container, false);
+        View view = inflater.inflate(R.layout.app_list, container, false);
+
+        appRecyclerView = view.findViewById(R.id.appRecyclerView);
+        btnBack = view.findViewById(R.id.btnBack);
+        progressBar = view.findViewById(R.id.progressBar);
+
+        return view;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        appRecyclerView = view.findViewById(R.id.appRecyclerView);
-        btnBack = view.findViewById(R.id.btnBack);
+        // Сразу показываем ProgressBar
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
 
-        // Быстрая инициализация RecyclerView с пустым адаптером
+        // Устанавливаем GridLayoutManager с 4 столбцами
         int spanCount = 4;
         GridLayoutManager layoutManager = new GridLayoutManager(getContext(), spanCount);
         appRecyclerView.setLayoutManager(layoutManager);
 
-        // Создаем пустой адаптер сразу
-        appListView = new AppListView(getContext(), cachedApps,
+        // Создаем пустой адаптер
+        appListAdapter = new AppListAdapter(getContext(), new ArrayList<>(),
                 packageName -> {
                     if (onAppClickListener != null) {
                         onAppClickListener.onAppClick(packageName);
                     }
                 });
 
-        appRecyclerView.setAdapter(appListView);
+        appRecyclerView.setAdapter(appListAdapter);
+
+        // Загружаем приложения
+        loadAppsAsync();
 
         // Кнопка назад
         btnBack.setOnClickListener(v -> {
@@ -90,26 +96,28 @@ public class FastAppListFragment extends Fragment {
                 ((LauncherActivity) getActivity()).switchToPage(ViewType.Main);
             }
         });
-
-        // Загружаем приложения (если есть кэш, показываем сразу)
-        loadAppsWithCache();
     }
 
-    private void loadAppsWithCache() {
-        if (appsManager == null) {
-            appsManager = new AppsManager(getContext());
-        }
+    private void loadAppsAsync() {
+        if (isLoading) return;
 
-        // Пытаемся получить из кэша
+        isLoading = true;
+        appsManager = new AppsManager(getContext());
+
         appsManager.loadUserAppsAsync(new AppsManager.AppLoadCallback() {
             @Override
             public void onAppsLoaded(List<AppData> apps) {
-                cachedApps = apps;
+                arrayOfApp = apps;
+                isLoading = false;
 
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        if (appListView != null) {
-                            appListView.updateApps(cachedApps);
+                        if (progressBar != null) {
+                            progressBar.setVisibility(View.GONE);
+                        }
+
+                        if (appListAdapter != null) {
+                            appListAdapter.updateApps(arrayOfApp);
                         }
                     });
                 }
@@ -120,7 +128,20 @@ public class FastAppListFragment extends Fragment {
     public void refreshAppList() {
         if (appsManager != null) {
             appsManager.invalidateCache();
-            loadAppsWithCache();
         }
+        loadAppsAsync();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Опционально: обновлять список при возвращении
+        // refreshAppList();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        isLoading = false;
     }
 }

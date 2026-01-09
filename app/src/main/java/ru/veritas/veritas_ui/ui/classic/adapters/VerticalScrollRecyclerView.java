@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.ui.view;
+package ru.veritas.veritas_ui.ui.classic.adapters;
 
 import android.content.Context;
 import android.util.AttributeSet;

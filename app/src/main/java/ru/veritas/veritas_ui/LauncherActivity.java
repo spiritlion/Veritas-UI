@@ -9,10 +9,14 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
+import java.util.List;
+
 import ru.veritas.veritas_ui.managers.main.app.AppsManager;
+import ru.veritas.veritas_ui.managers.main.desktop.DesktopItem;
+import ru.veritas.veritas_ui.managers.ui.desktop.DesktopManager;
 import ru.veritas.veritas_ui.ui.ViewType;
-import ru.veritas.veritas_ui.ui.fragment.MainFragment;
-import ru.veritas.veritas_ui.ui.fragment.AppListFragment;
+import ru.veritas.veritas_ui.ui.classic.fragment.HomeDesktopFragment;
+import ru.veritas.veritas_ui.ui.classic.fragment.AppListFragment;
 
 /**
  * Главный класс лаунчера
@@ -26,6 +30,8 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
 
     // Флаг для отслеживания предзагрузки
     private boolean isAppListPreloaded = false;
+    private HomeDesktopFragment homeDesktopFragment;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +45,7 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
         viewPager.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
 
         // Создаем и настраиваем адаптер
+        // Получаем ссылку на фрагмент рабочего стола для обновления
         adapter = new LauncherPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
@@ -63,6 +70,29 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
                 isAppListPreloaded = true;
                 Log.d(TAG, "Данные приложений предзагружены");
             }).start();
+        }
+    }
+
+    /**
+     * Добавляем приложение на рабочий стол из списка приложений
+     */
+    public void addAppToDesktop(String packageName) {
+        // Простая реализация - добавляем на первую свободную позицию
+        DesktopManager desktopManager = new DesktopManager(this);
+        List<DesktopItem> items = desktopManager.getDesktopItems();
+
+        // Находим свободную позицию (упрощенная логика)
+        int nextPos = items.size();
+        int gridX = nextPos % 4;
+        int gridY = nextPos / 4;
+
+        if (gridY < 6) { // Проверяем, чтобы не выйти за пределы сетки
+            desktopManager.addAppToDesktop(packageName, gridX, gridY);
+
+            // Обновляем рабочий стол
+            if (homeDesktopFragment != null) {
+                homeDesktopFragment.refreshDesktop();
+            }
         }
     }
 
@@ -133,7 +163,7 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
         public Fragment createFragment(int position) {
             switch (position) {
                 case 0:
-                    return new MainFragment();
+                    return new HomeDesktopFragment();
                 case 1:
                     return new AppListFragment();
                 default:

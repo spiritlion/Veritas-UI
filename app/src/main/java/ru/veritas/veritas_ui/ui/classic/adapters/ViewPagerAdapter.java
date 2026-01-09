@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.ui;
+package ru.veritas.veritas_ui.ui.classic.adapters;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;

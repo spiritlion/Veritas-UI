@@ -44,7 +44,7 @@
         android:visibility="gone" />
 
     <!-- Кастомный RecyclerView -->
-    <ru.veritas.veritas_ui.ui.view.VerticalScrollRecyclerView
+    <ru.veritas.veritas_ui.ui.classic.adapters.VerticalScrollRecyclerView
         android:id="@+id/appRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
