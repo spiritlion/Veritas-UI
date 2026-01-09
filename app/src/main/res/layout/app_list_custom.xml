@@ -6,54 +6,9 @@
     android:orientation="vertical"
     android:background="@android:color/white">
 
-    <!-- Заголовок с кнопкой назад -->
-    <LinearLayout
+    <WebView
+        android:id="@+id/webViewAppList"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="?attr/colorPrimary"
-        android:padding="16dp">
-
-        <Button
-            android:id="@+id/btnBack"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Назад"
-            android:layout_marginRight="16dp" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Все приложения"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:textColor="@android:color/white" />
-
-    </LinearLayout>
-
-    <!-- Контейнер для быстрой загрузки -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <!-- ProgressBar поверх RecyclerView -->
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone" />
-
-        <!-- Кастомный RecyclerView -->
-        <ru.veritas.veritas_ui.ui.classic.adapters.VerticalScrollRecyclerView
-            android:id="@+id/appRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="8dp" />
-
-    </FrameLayout>
+        android:layout_height="match_parent" />
 
 </LinearLayout>

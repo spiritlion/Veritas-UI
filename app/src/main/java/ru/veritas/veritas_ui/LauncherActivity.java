@@ -17,6 +17,7 @@ import ru.veritas.veritas_ui.managers.ui.desktop.DesktopManager;
 import ru.veritas.veritas_ui.ui.ViewType;
 import ru.veritas.veritas_ui.ui.classic.fragment.HomeDesktopFragment;
 import ru.veritas.veritas_ui.ui.classic.fragment.AppListFragment;
+import ru.veritas.veritas_ui.ui.custom.fragment.CustomAppListFragment;
 
 /**
  * Главный класс лаунчера
@@ -165,7 +166,7 @@ public class LauncherActivity extends AppCompatActivity implements AppListFragme
                 case 0:
                     return new HomeDesktopFragment();
                 case 1:
-                    return new AppListFragment();
+                    return new CustomAppListFragment();
                 default:
                     throw new IllegalArgumentException("Invalid position: " + position);
             }

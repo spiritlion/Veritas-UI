@@ -4,6 +4,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -29,9 +33,7 @@ public class AppsManager {
         this.packageManager = context.getPackageManager();
         this.ownPackageName = context.getPackageName();
     }
-    /**
-     * Загружаем пользовательские приложения
-     */
+
     /**
      * Загружаем пользовательские приложения (асинхронно)
      */
@@ -176,6 +178,28 @@ public class AppsManager {
         }
 
         return false;
+    }
+
+    public Bitmap getAppIconBitmap(String packageName) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
+            Drawable drawable = pm.getApplicationIcon(appInfo);
+
+            if (drawable != null) {
+                Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(),
+                        drawable.getIntrinsicHeight(),
+                        Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                drawable.draw(canvas);
+                return bitmap;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting app icon bitmap: " + e.getMessage());
+        }
+
+        return null;
     }
 
     /**
