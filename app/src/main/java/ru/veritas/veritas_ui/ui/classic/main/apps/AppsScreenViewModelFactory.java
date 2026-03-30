@@ -1,9 +1,11 @@
-package ru.veritas.veritas_ui.ui.classic.apps;
+package ru.veritas.veritas_ui.ui.classic.main.apps;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
+
 import ru.veritas.veritas_ui.data.repositories.AppRepositoryImpl;
 import ru.veritas.veritas_ui.data.source.local.PackageManagerDataSource;
 import ru.veritas.veritas_ui.domain.use_cases.local.GetInstalledAppsUseCase;

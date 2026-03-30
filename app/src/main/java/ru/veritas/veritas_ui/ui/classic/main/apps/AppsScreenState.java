@@ -1,7 +1,8 @@
 // AppsScreenState.java
-package ru.veritas.veritas_ui.ui.classic.apps;
+package ru.veritas.veritas_ui.ui.classic.main.apps;
 
 import java.util.List;
+
 import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
 
 public abstract class AppsScreenState {

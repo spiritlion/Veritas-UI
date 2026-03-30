@@ -27,7 +27,7 @@
             android:stateNotNeeded="true"
             android:clearTaskOnLaunch="true"
             android:launchMode="standard"
-            android:name=".ui.classic.apps.AppsScreenActivity"
+            android:name=".ui.classic.main.activity.MainActivity"
             android:exported="true"
             android:theme="@style/Base.Theme.VeritasUI">
             <intent-filter>

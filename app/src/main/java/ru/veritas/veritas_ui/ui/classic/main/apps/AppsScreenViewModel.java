@@ -1,7 +1,8 @@
 // AppsScreenViewModel.java
-package ru.veritas.veritas_ui.ui.classic.apps;
+package ru.veritas.veritas_ui.ui.classic.main.apps;
 
 import android.app.Application;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;

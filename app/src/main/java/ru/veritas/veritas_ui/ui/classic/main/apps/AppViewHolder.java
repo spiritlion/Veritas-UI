@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.ui.classic.apps;
+package ru.veritas.veritas_ui.ui.classic.main.apps;
 
 import android.view.View;
 import android.widget.ImageView;
@@ -32,5 +32,9 @@ public class AppViewHolder extends RecyclerView.ViewHolder {
         icon.setImageDrawable(app.getIcon());
         name.setText(app.getAppName());
         cardView.setOnClickListener(v -> listener.onItemClick(app));
+        cardView.setOnLongClickListener(v -> {
+            listener.onItemLongClick(app);
+            return true;
+        });
     }
 }

@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.ui.classic.apps;
+package ru.veritas.veritas_ui.ui.classic.main.apps;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,6 +23,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
 
     public interface OnItemClickListener {
         void onItemClick(AppInfoEntity app);
+        void onItemLongClick(AppInfoEntity app);
     }
 
     private List<AppInfoEntity> apps = new ArrayList<>();
