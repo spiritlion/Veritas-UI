@@ -1,7 +1,10 @@
 package ru.veritas.veritas_ui.data.repositories;
 
+import static android.os.ParcelFileDescriptor.MODE_APPEND;
+
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
@@ -11,35 +14,50 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 
 public class HomeRepositoryImpl implements HomeRepository {
-    private static final String PREFS_NAME = "launcher_prefs";
-    private static final String KEY_SHORTCUTS = "shortcuts";
-    private final SharedPreferences prefs;
-
+    private final Context context;
+    private PackageManager packageManager;
     public HomeRepositoryImpl(Context context) {
-        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        this.context = context.getApplicationContext();
+        packageManager = context.getPackageManager();
     }
 
     @Override
     public List<AppShortcut> getShortcuts() {
         List<AppShortcut> shortcuts = new ArrayList<>();
-        String json = prefs.getString(KEY_SHORTCUTS, "[]");
-        try {
-            JSONArray array = new JSONArray(json);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject obj = array.getJSONObject(i);
-                String packageName = obj.getString("packageName");
-                String appName = obj.getString("appName");
-                // Иконку не сохраняем в JSON, она будет загружена позже из PackageManager
-                shortcuts.add(new AppShortcut(packageName, appName, null));
+        try (
+            BufferedReader bf = new BufferedReader(
+                new InputStreamReader(context.openFileInput("home_arh.txt"))
+            )
+        ) {
+            String packageName;
+            while ((packageName = bf.readLine()) != null) {
+                if (packageName.isBlank()) continue;
+                try {
+                    Drawable icon = packageManager.getApplicationIcon(packageName); // TODO with AI
+                    String appName = packageManager.getApplicationLabel(
+                            packageManager.getApplicationInfo(packageName, 0)).toString();
+                    shortcuts.add(new AppShortcut(packageName, appName, icon));
+                } catch (PackageManager.NameNotFoundException e) {
+                    // Приложение удалено — пропускаем
+                }
             }
-        } catch (JSONException e) {
-            Log.e("HomeRepo", "Error parsing shortcuts", e);
+        } catch (FileNotFoundException e) {
+            // TODO
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return shortcuts;
     }
@@ -48,11 +66,11 @@ public class HomeRepositoryImpl implements HomeRepository {
     public void addShortcut(String packageName, String appName, Drawable icon) {
         List<AppShortcut> current = getShortcuts();
         // Проверяем, нет ли уже такого ярлыка
-        for (AppShortcut shortcut : current) {
-            if (shortcut.getPackageName().equals(packageName)) {
-                return;
-            }
-        }
+//        for (AppShortcut shortcut : current) {
+//            if (shortcut.getPackageName().equals(packageName)) {
+//                return;
+//            }
+//        }
         current.add(new AppShortcut(packageName, appName, null));
         saveShortcuts(current);
     }
@@ -70,17 +88,20 @@ public class HomeRepositoryImpl implements HomeRepository {
     }
 
     private void saveShortcuts(List<AppShortcut> shortcuts) {
-        JSONArray array = new JSONArray(); // TODO переделать на песочницу
-        for (AppShortcut shortcut : shortcuts) {
-            JSONObject obj = new JSONObject();
-            try {
-                obj.put("packageName", shortcut.getPackageName());
-                obj.put("appName", shortcut.getAppName());
-                array.put(obj);
-            } catch (JSONException e) {
-                Log.e("HomeRepo", "Error saving shortcut", e);
-            }
+        try {
+            BufferedWriter bf = new BufferedWriter(
+                    new OutputStreamWriter(
+                            context.openFileOutput("home_arh.txt", Context.MODE_APPEND)));
+            shortcuts.forEach(it -> {
+                    try {
+                        bf.append(it.getPackageName());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            bf.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        prefs.edit().putString(KEY_SHORTCUTS, array.toString()).apply();
     }
 }

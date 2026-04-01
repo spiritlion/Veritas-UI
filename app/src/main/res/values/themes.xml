@@ -12,6 +12,7 @@
     <style name="Theme.AppCompat.Translucent" parent="Theme.AppCompat.NoActionBar" >
         <!--on below line we are setting background as transparent color-->
         <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowShowWallpaper">true</item>
         <!--on below line we are displaying the windowNotitle as true as we are not displaying our status bar-->
         <item name="android:windowNoTitle">true</item>
         <!--on below line we are setting our window background as transparent color-->
