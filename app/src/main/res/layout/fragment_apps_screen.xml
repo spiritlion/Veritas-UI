@@ -39,7 +39,7 @@
 
 
     <ProgressBar
-        android:id="@+id/progressIndicator"
+        android:id="@+id/progressIndicatorApps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -53,24 +53,24 @@
         android:id="@+id/error_container">
 
         <TextView
-            android:id="@+id/error_text"
+            android:id="@+id/error_text_apps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#FF0000"
             android:textSize="24sp"
             android:paddingBottom="20dp"
-            app:layout_constraintBottom_toTopOf="@+id/error_button"
+            app:layout_constraintBottom_toTopOf="@+id/error_button_apps"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
-            android:id="@+id/error_button"
+            android:id="@+id/error_button_apps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/error_text"
+            app:layout_constraintTop_toBottomOf="@id/error_text_apps"
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -2,7 +2,7 @@ package ru.veritas.veritas_ui.data.repositories;
 
 import ru.veritas.veritas_ui.data.dto.AppInfoDto;
 import ru.veritas.veritas_ui.data.source.local.PackageManagerDataSource;
-import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +16,11 @@ public class AppRepositoryImpl implements AppRepository {
     }
 
     @Override
-    public List<AppInfoEntity> getInstalledApps() {
+    public List<AppShortcutDTO> getInstalledApps() {
         List<AppInfoDto> dtos = dataSource.getInstalledApps();
-        List<AppInfoEntity> apps = new ArrayList<>();
+        List<AppShortcutDTO> apps = new ArrayList<>();
         for (AppInfoDto dto : dtos) {
-            apps.add(new AppInfoEntity(dto.getPackageName(), dto.getAppName(), dto.getIcon()));
+            apps.add(new AppShortcutDTO(dto.getPackageName(), dto.getAppName(), null));
         }
         return apps;
     }

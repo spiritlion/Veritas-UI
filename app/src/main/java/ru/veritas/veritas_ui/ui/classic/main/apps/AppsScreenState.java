@@ -3,7 +3,7 @@ package ru.veritas.veritas_ui.ui.classic.main.apps;
 
 import java.util.List;
 
-import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 public abstract class AppsScreenState {
     private AppsScreenState() {} // запрещаем создание извне
@@ -14,15 +14,15 @@ public abstract class AppsScreenState {
     }
 
     public static final class Content extends AppsScreenState {
-        private final List<AppInfoEntity> apps;
+        private final List<AppShortcutDTO> apps;
         private final boolean showForMe; // или другие параметры, если нужны
 
-        public Content(List<AppInfoEntity> apps) {
+        public Content(List<AppShortcutDTO> apps) {
             this.apps = apps;
             this.showForMe = true; // по умолчанию или передавайте через конструктор
         }
 
-        public List<AppInfoEntity> getApps() {
+        public List<AppShortcutDTO> getApps() {
             return apps;
         }
 

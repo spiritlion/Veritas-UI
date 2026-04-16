@@ -9,7 +9,7 @@ public class RemoveShortcutUseCase {
         this.homeRepository = homeRepository;
     }
 
-    public void execute(String packageName) {
-        homeRepository.removeShortcut(packageName);
+    public void invoke(int i, int j, int k) {
+        homeRepository.removeShortcut(i, j, k);
     }
 }

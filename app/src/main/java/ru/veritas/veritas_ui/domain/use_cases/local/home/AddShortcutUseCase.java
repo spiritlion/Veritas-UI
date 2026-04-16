@@ -4,6 +4,8 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 
 import ru.veritas.veritas_ui.data.repositories.HomeRepository;
+import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 public class AddShortcutUseCase {
     private final HomeRepository homeRepository;
@@ -14,14 +16,11 @@ public class AddShortcutUseCase {
         this.packageManager = packageManager;
     }
 
-    public void invoke(String packageName) {
-        try {
-            Drawable icon = packageManager.getApplicationIcon(packageName);
-            String appName = packageManager.getApplicationLabel(
-                    packageManager.getApplicationInfo(packageName, 0)).toString();
-            homeRepository.addShortcut(packageName, appName, icon);
-        } catch (PackageManager.NameNotFoundException e) {
-            // ignore
-        }
+    public void invoke(int i, int j, int k, AppShortcutDTO shortcut) {
+        homeRepository.addShortcut(i, j, k, shortcut);
+    }
+
+    public void invoke(AppShortcutDTO shortcut) {
+        homeRepository.addShortcut(shortcut);
     }
 }

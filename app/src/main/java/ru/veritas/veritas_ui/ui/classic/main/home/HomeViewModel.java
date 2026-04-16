@@ -1,6 +1,7 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -11,13 +12,13 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.AddShortcutUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetShortcutsUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.RemoveShortcutUseCase;
 
 public class HomeViewModel extends AndroidViewModel {
-    private final MutableLiveData<List<AppShortcut>> shortcuts = new MutableLiveData<>();
+    private final MutableLiveData<HomeScreenState> state = new MutableLiveData<>();
     private final GetShortcutsUseCase GetShortcutsUseCase;
     private final AddShortcutUseCase AddShortcutUseCase;
     private final RemoveShortcutUseCase RemoveShortcutUseCase;
@@ -32,28 +33,31 @@ public class HomeViewModel extends AndroidViewModel {
         this.AddShortcutUseCase = AddShortcutUseCase;
         this.RemoveShortcutUseCase = RemoveShortcutUseCase;
     }
-
-    public LiveData<List<AppShortcut>> getShortcuts() {
-        return shortcuts;
-    }
-
+    
     public void loadShortcuts() {
+        state.postValue(HomeScreenState.Loading.INSTANCE);
         executor.execute(() -> {
-            List<AppShortcut> list = GetShortcutsUseCase.invoke();
-            shortcuts.postValue(list);
+            try {
+                List<List<List<AppShortcutDTO>>> list = GetShortcutsUseCase.invoke();
+                Log.d("Home Screen", (list == null) + "");
+                state.postValue(new HomeScreenState.Content(list));
+            } catch (Exception e) {
+                Log.e("Home Screen", "Ошибка загрузки рабочего стола" + e.getMessage());
+                state.postValue(new HomeScreenState.Error("Ошибка загрузки рабочего стола" + e.getMessage(), this::loadShortcuts, "Повторить попытку"));
+            }
         });
     }
 
-    public void addShortcut(String packageName) {
+    public void addShortcut(AppShortcutDTO shortcut) {
         executor.execute(() -> {
-            AddShortcutUseCase.invoke(packageName);
+            AddShortcutUseCase.invoke(shortcut);
             loadShortcuts(); // обновляем список
         });
     }
 
-    public void removeShortcut(String packageName) {
+    public void removeShortcut(int i, int j, int k) {
         executor.execute(() -> {
-            RemoveShortcutUseCase.execute(packageName);
+            RemoveShortcutUseCase.invoke(i, j, k);
             loadShortcuts();
         });
     }
@@ -62,5 +66,9 @@ public class HomeViewModel extends AndroidViewModel {
     protected void onCleared() {
         super.onCleared();
         executor.shutdown();
+    }
+
+    public LiveData<HomeScreenState> getState() {
+        return state;
     }
 }

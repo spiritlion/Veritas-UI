@@ -10,7 +10,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.card.MaterialCardView;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
 
 /**
  * Этот класс хранит ссылки на все View внутри одного элемента списка
@@ -28,8 +29,9 @@ public class AppViewHolder extends RecyclerView.ViewHolder {
         name = itemView.findViewById(R.id.app_name);
     }
 
-    public void bind(final AppInfoEntity app, final AppsAdapter.OnItemClickListener listener) {
-        icon.setImageDrawable(app.getIcon());
+    public void bind(final AppShortcutDTO app, final AppsAdapter.OnItemClickListener listener, GetImageUseCase getImageUseCase) {
+        if (app == null) return;
+        icon.setImageDrawable(getImageUseCase.invoke(app));
         name.setText(app.getAppName());
         cardView.setOnClickListener(v -> listener.onItemClick(app));
         cardView.setOnLongClickListener(v -> {

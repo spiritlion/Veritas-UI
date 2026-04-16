@@ -1,105 +1,145 @@
 package ru.veritas.veritas_ui.data.repositories;
 
-import static android.os.ParcelFileDescriptor.MODE_APPEND;
-
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.Drawable;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 public class HomeRepositoryImpl implements HomeRepository {
+
     private final Context context;
-    private PackageManager packageManager;
+
     public HomeRepositoryImpl(Context context) {
         this.context = context.getApplicationContext();
-        packageManager = context.getPackageManager();
     }
 
     @Override
-    public List<AppShortcut> getShortcuts() {
-        List<AppShortcut> shortcuts = new ArrayList<>();
-        try (
-            BufferedReader bf = new BufferedReader(
-                new InputStreamReader(context.openFileInput("home_arh.txt"))
-            )
-        ) {
-            String packageName;
-            while ((packageName = bf.readLine()) != null) {
-                if (packageName.isBlank()) continue;
-                try {
-                    Drawable icon = packageManager.getApplicationIcon(packageName); // TODO with AI
-                    String appName = packageManager.getApplicationLabel(
-                            packageManager.getApplicationInfo(packageName, 0)).toString();
-                    shortcuts.add(new AppShortcut(packageName, appName, icon));
-                } catch (PackageManager.NameNotFoundException e) {
-                    // Приложение удалено — пропускаем
-                }
-            }
+    public List<List<List<AppShortcutDTO>>> getShortcuts() {
+        try (FileInputStream fileInputStream = context.openFileInput("home_arh.json");
+             InputStreamReader streamReader = new InputStreamReader(fileInputStream)) {
+            Log.e("get s", "Файл найден");
+            Gson gson = new Gson();
+            Type type = new TypeToken<List<List<List<AppShortcutDTO>>>>(){}.getType();
+            return gson.fromJson(streamReader, type);
         } catch (FileNotFoundException e) {
-            // TODO
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            Log.e("get s", "Файл не найден");
+            createShortcuts();
+            getShortcuts();
+        } catch (IOException ex) {
+            Log.e("get s", "IO");
+            ex.printStackTrace();
         }
-        return shortcuts;
+        return null;
     }
 
-    @Override
-    public void addShortcut(String packageName, String appName, Drawable icon) {
-        List<AppShortcut> current = getShortcuts();
-        // Проверяем, нет ли уже такого ярлыка
-//        for (AppShortcut shortcut : current) {
-//            if (shortcut.getPackageName().equals(packageName)) {
-//                return;
+
+//    public List<List<List<AppShortcut>>> getShortcuts() {
+//        List<List<List<AppShortcut>>> shortcuts = new ArrayList<>();
+//        List<List<List<AppShortcutDTO>>> lll = getShortcutsDto();
+//        assert lll != null;
+//        for (int i = 0; i < lll.size(); i++) {
+//            List<List<AppShortcutDTO>> ll = lll.get(i);
+//            shortcuts.add(new ArrayList<>());
+//            for (int j = 0; j < ll.size(); j++) {
+//                List<AppShortcutDTO> l = ll.get(j);
+//                shortcuts.get(i).add(new ArrayList<>());
+//                for (int k = 0; k < l.size(); k++) {
+//                    AppShortcut shortcut;
+//                    try {
+//                        shortcut = new AppShortcut(
+//                                l.get(k).getPackageName(),
+//                                l.get(k).getAppName(),
+//                                packageManager.getApplicationIcon(l.get(i).getPackageName())
+//                        );
+//                    } catch (PackageManager.NameNotFoundException e) {
+//                        shortcut = new AppShortcut(
+//                                l.get(k).getPackageName(),
+//                                l.get(k).getAppName(),
+//                                null
+//                        );
+//                    }
+//                    shortcuts.get(i).get(j).set(k, shortcut);
+//                }
 //            }
 //        }
-        current.add(new AppShortcut(packageName, appName, null));
-        saveShortcuts(current);
+//        return null;
+//    }
+
+
+    @Override
+    public void addShortcut(AppShortcutDTO shortcut) {
+        List<List<List<AppShortcutDTO>>> shortcuts = getShortcuts();
+        for (int i = 0; i < shortcuts.size(); i++) {
+            for (int j = 0; j < shortcuts.get(i).size(); j++) {
+                for (int k = 0; k < shortcuts.get(i).get(j).size(); k++) {
+                    if (shortcuts.get(i).get(j).get(k) == null) {
+                        addShortcut(i, j, k, shortcut);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    @Override
+    public void addShortcut(int i, int j, int k, AppShortcutDTO shortcut) {
+        Log.d("add s", "1");
+        List<List<List<AppShortcutDTO>>> shortcuts = getShortcuts();
+        assert shortcuts != null;
+        shortcuts.get(i).get(j).set(k, shortcut);
+        saveShortcuts(shortcuts);
     }
 
     @Override
-    public void removeShortcut(String packageName) {
-        List<AppShortcut> current = getShortcuts();
-        current.removeIf(shortcut -> shortcut.getPackageName().equals(packageName));
-        saveShortcuts(current);
+    public void removeShortcut(int i, int j, int k) {
+        addShortcut(i, j, k, null);
     }
 
     @Override
     public boolean isShortcutExists(String packageName) {
-        return getShortcuts().stream().anyMatch(s -> s.getPackageName().equals(packageName));
+        return getShortcuts().stream().anyMatch(ll ->
+                ll.stream().anyMatch(l ->
+                        l.stream().anyMatch(s ->
+                                s.getPackageName().equals(packageName)
+                        )
+                )
+        );
     }
 
-    private void saveShortcuts(List<AppShortcut> shortcuts) {
-        try {
-            BufferedWriter bf = new BufferedWriter(
-                    new OutputStreamWriter(
-                            context.openFileOutput("home_arh.txt", Context.MODE_APPEND)));
-            shortcuts.forEach(it -> {
-                    try {
-                        bf.append(it.getPackageName());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            bf.close();
+    private void createShortcuts() {
+        List<List<List<AppShortcutDTO>>> shortcuts = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            shortcuts.add(new ArrayList<>());
+            for (int j = 0; j < 6; j++) {
+                shortcuts.get(i).add(new ArrayList<>());
+                for (int k = 0; k < 4; k++) {
+                    shortcuts.get(i).get(j).add(null);
+                }
+            }
+        }
+        saveShortcuts(shortcuts);
+    }
+
+    private void saveShortcuts(List<List<List<AppShortcutDTO>>> shortcuts) {
+        Gson gson = new Gson();
+        String data = gson.toJson(shortcuts);
+        Log.d("json", data);
+        try (FileOutputStream fileOutputStream = context.openFileOutput("home_arh.json", Context.MODE_PRIVATE)) {
+            fileOutputStream.write(data.getBytes());
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

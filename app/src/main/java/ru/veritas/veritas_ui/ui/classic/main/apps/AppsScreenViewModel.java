@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.GetInstalledAppsUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
 
@@ -39,7 +39,7 @@ public class AppsScreenViewModel extends AndroidViewModel {
         state.postValue(AppsScreenState.Loading.INSTANCE);
         executor.execute(() -> {
             try {
-                List<AppInfoEntity> apps = getInstalledAppsUseCase.invoke();
+                List<AppShortcutDTO> apps = getInstalledAppsUseCase.invoke();
                 state.postValue(new AppsScreenState.Content(apps));
             } catch (Exception e) {
                 state.postValue(new AppsScreenState.Error(

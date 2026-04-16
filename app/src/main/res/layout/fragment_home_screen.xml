@@ -3,13 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:nestedScrollingEnabled="true"
-        android:orientation="horizontal"
-        android:padding="8dp" />
+        android:orientation="horizontal"/>
 
 </FrameLayout>

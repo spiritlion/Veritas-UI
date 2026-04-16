@@ -11,7 +11,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -20,7 +19,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
+import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModelFactory;
 
@@ -46,9 +46,9 @@ public class AppsScreenFragment extends Fragment  {
         super.onViewCreated(view, savedInstanceState);
 
         recyclerView = view.findViewById(R.id.recyclerView);
-        progressIndicator = view.findViewById(R.id.progressIndicator);
-        errorText = view.findViewById(R.id.error_text);
-        errorButton = view.findViewById(R.id.error_button);
+        progressIndicator = view.findViewById(R.id.progressIndicatorApps);
+        errorText = view.findViewById(R.id.error_text_apps);
+        errorButton = view.findViewById(R.id.error_button_apps);
 
         setupRecyclerView();
 
@@ -66,7 +66,7 @@ public class AppsScreenFragment extends Fragment  {
                 progressIndicator.setVisibility(View.INVISIBLE);
                 recyclerView.setVisibility(View.VISIBLE);
                 hideError();
-                List<AppInfoEntity> apps = ((AppsScreenState.Content) state).getApps();
+                List<AppShortcutDTO> apps = ((AppsScreenState.Content) state).getApps();
                 adapter.setApps(apps);
             } else if (state instanceof AppsScreenState.Error) {
                 progressIndicator.setVisibility(View.INVISIBLE);
@@ -82,19 +82,19 @@ public class AppsScreenFragment extends Fragment  {
     private void setupRecyclerView() {
         adapter = new AppsAdapter(new AppsAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(AppInfoEntity app) {
+            public void onItemClick(AppShortcutDTO app) {
                 viewModel.launchApp(app.getPackageName());
             }
 
             @Override
-            public void onItemLongClick(AppInfoEntity app) {
+            public void onItemLongClick(AppShortcutDTO app) {
                 // Добавляем на рабочий стол
                 HomeViewModel homeViewModel = new ViewModelProvider(requireActivity(),
                         new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
-                homeViewModel.addShortcut(app.getPackageName());
+                homeViewModel.addShortcut(app);
                 Toast.makeText(requireContext(), "Ярлык добавлен на рабочий стол", Toast.LENGTH_SHORT).show();
             }
-        });
+        }, requireContext());
         recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 4));
         recyclerView.setAdapter(adapter);
     }
@@ -112,5 +112,4 @@ public class AppsScreenFragment extends Fragment  {
         errorButton.setVisibility(View.GONE);
         errorButton.setOnClickListener(null);
     }
-
 }

@@ -1,5 +1,6 @@
 package ru.veritas.veritas_ui.ui.classic.main.apps;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,26 +12,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
 
 /**
- * Этот класс связывает данные (список {@link AppInfoEntity}) с {@link RecyclerView}.
+ * Этот класс связывает данные (список {@link AppShortcutDTO}) с {@link RecyclerView}.
  * Он создаёт {@link RecyclerView.ViewHolder}'ы, когда это необходимо, и
  * наполняет их данными, соответствующими позиции в списке.
  * Также он управляет размером списка и уведомляет {@link RecyclerView} об изменениях данных.
  */
 public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
-
+    GetImageUseCase getImageUseCase;
     public interface OnItemClickListener {
-        void onItemClick(AppInfoEntity app);
-        void onItemLongClick(AppInfoEntity app);
+        void onItemClick(AppShortcutDTO app);
+        void onItemLongClick(AppShortcutDTO app);
     }
 
-    private List<AppInfoEntity> apps = new ArrayList<>();
+    private List<AppShortcutDTO> apps = new ArrayList<>();
     private final OnItemClickListener listener;
 
-    public AppsAdapter(OnItemClickListener listener) {
+    public AppsAdapter(OnItemClickListener listener, Context context) {
         this.listener = listener;
+        getImageUseCase = new GetImageUseCase(context.getPackageManager());
     }
 
     @NonNull
@@ -42,8 +45,8 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull AppViewHolder holder, int position) {
-        AppInfoEntity app = apps.get(position);
-        holder.bind(app, listener);
+        AppShortcutDTO dto = apps.get(position);
+        holder.bind(dto, listener, getImageUseCase);
     }
 
     @Override
@@ -51,7 +54,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
         return apps.size();
     }
 
-    public void setApps(List<AppInfoEntity> apps) {
+    public void setApps(List<AppShortcutDTO> apps) {
         this.apps = apps;
         notifyDataSetChanged();
     }

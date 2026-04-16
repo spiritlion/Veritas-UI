@@ -1,7 +1,7 @@
 package ru.veritas.veritas_ui.domain.use_cases.local;
 
 import ru.veritas.veritas_ui.data.repositories.AppRepository;
-import ru.veritas.veritas_ui.domain.entities.AppInfoEntity;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ public class GetInstalledAppsUseCase {
     /**
      * Возращает все установленные приложения, имеющие лаунчер
      */
-    public List<AppInfoEntity> invoke() {
+    public List<AppShortcutDTO> invoke() {
         return repository.getInstalledApps();
     }
 }
