@@ -118,6 +118,11 @@ public class HomeRepositoryImpl implements HomeRepository {
         );
     }
 
+    @Override
+    public AppShortcutDTO getShortcut(int i, int j, int k) {
+        return getShortcuts().get(i).get(j).get(k);
+    }
+
     private void createShortcuts() {
         List<List<List<AppShortcutDTO>>> shortcuts = new ArrayList<>();
         for (int i = 0; i < 5; i++) {

@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 import ru.veritas.veritas_ui.data.repositories.HomeRepositoryImpl;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.AddShortcutUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetShortcutsUseCase;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.MoveShortcutUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.RemoveShortcutUseCase;
 
 public class HomeViewModelFactory implements ViewModelProvider.Factory {
@@ -27,11 +28,13 @@ public class HomeViewModelFactory implements ViewModelProvider.Factory {
             PackageManager pm = context.getPackageManager();
             GetShortcutsUseCase getUseCase = new GetShortcutsUseCase(homeRepository, pm);
             AddShortcutUseCase addUseCase = new AddShortcutUseCase(homeRepository, pm);
+            MoveShortcutUseCase moveUseCase = new MoveShortcutUseCase(homeRepository);
             RemoveShortcutUseCase removeUseCase = new RemoveShortcutUseCase(homeRepository);
             return (T) new HomeViewModel(
                     (android.app.Application) context.getApplicationContext(),
                     getUseCase,
                     addUseCase,
+                    moveUseCase,
                     removeUseCase
             );
         }

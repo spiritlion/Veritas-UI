@@ -2,6 +2,8 @@ package ru.veritas.veritas_ui.ui.classic.main.home;
 
 import static android.view.View.INVISIBLE;
 
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,7 +58,12 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         holder.app.setOnLongClickListener(v -> {
             int row = position / columnCount;
             int col = position % columnCount;
-            listener.onItemLongClick(pageIndex, row, col);
+//            listener.onItemLongClick(pageIndex, row, col);
+            ClipData.Item item = new ClipData.Item(pageIndex + ":" + row + ":" + col);
+            ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+            View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+
+            v.startDragAndDrop(dragData, shadowBuilder, null, 0);
             return true;
         });
         holder.appName.setText(app.getAppName());

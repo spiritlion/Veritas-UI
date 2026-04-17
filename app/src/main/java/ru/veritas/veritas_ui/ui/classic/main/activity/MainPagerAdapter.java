@@ -7,7 +7,6 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import ru.veritas.veritas_ui.ui.classic.main.apps.AppsScreenFragment;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeScreenFragment;
-import ru.veritas.veritas_ui.ui.classic.main.home.SampleScreenFragment;
 
 public class MainPagerAdapter extends FragmentStateAdapter {
 

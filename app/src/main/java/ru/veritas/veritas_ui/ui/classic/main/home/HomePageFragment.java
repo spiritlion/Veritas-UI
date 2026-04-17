@@ -1,6 +1,9 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;// HomePageFragment.java
 
+import android.content.ClipData;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +11,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -58,6 +62,50 @@ public class HomePageFragment extends Fragment {
         Bundle args = getArguments();
         int columnCount = args != null ? args.getInt(ARG_COLUMN_COUNT, 4) : 4;
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), columnCount));
+        recyclerView.setOnDragListener(
+                (v, event) -> {
+                    switch (event.getAction()) {
+                        case DragEvent.ACTION_DRAG_STARTED:
+                            return true;
+                        case DragEvent.ACTION_DROP:
+                            ClipData clipData = event.getClipData();
+                            if (clipData != null && clipData.getItemCount() > 0) {
+                                String data = clipData.getItemAt(0).getText().toString();
+                                Log.d("Control", data);
+                                String[] parts = data.split(":");
+                                if (parts.length == 3) {
+                                    int fromPage = Integer.parseInt(parts[0]);
+                                    int fromRow = Integer.parseInt(parts[1]);
+                                    int fromCol = Integer.parseInt(parts[2]);
+
+                                    // Find target cell
+                                    int[] recyclerLocation = new int[2];
+                                    recyclerView.getLocationOnScreen(recyclerLocation);
+                                    float x = event.getX();
+                                    float y = event.getY();
+                                    View child = recyclerView.findChildViewUnder(x, y);
+                                    if (child != null) {
+                                        int targetPos = recyclerView.getChildAdapterPosition(child);
+                                        if (targetPos != RecyclerView.NO_POSITION) {
+                                            int targetRow = targetPos / columnCount;
+                                            int targetCol = targetPos % columnCount;
+                                            int targetPage = getArguments().getInt(ARG_PAGE_INDEX);
+
+                                            // Correct way to get ViewModel
+                                            HomeViewModel viewModel = new ViewModelProvider(requireActivity())
+                                                    .get(HomeViewModel.class);
+                                            viewModel.moveShortcut(fromPage, fromRow, fromCol,
+                                                    targetPage, targetRow, targetCol);
+                                        }
+                                    }
+                                }
+                            }
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+        );
 
         List<AppShortcutDTO> appsList = null;
         int pageIndex = 0;

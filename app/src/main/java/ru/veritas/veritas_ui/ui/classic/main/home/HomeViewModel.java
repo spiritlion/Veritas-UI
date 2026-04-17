@@ -15,22 +15,25 @@ import java.util.concurrent.Executors;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.AddShortcutUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetShortcutsUseCase;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.MoveShortcutUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.RemoveShortcutUseCase;
 
 public class HomeViewModel extends AndroidViewModel {
     private final MutableLiveData<HomeScreenState> state = new MutableLiveData<>();
     private final GetShortcutsUseCase GetShortcutsUseCase;
     private final AddShortcutUseCase AddShortcutUseCase;
+    private final MoveShortcutUseCase moveShortcutUseCase;
     private final RemoveShortcutUseCase RemoveShortcutUseCase;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public HomeViewModel(@NonNull Application application,
                          GetShortcutsUseCase GetShortcutsUseCase,
-                         AddShortcutUseCase AddShortcutUseCase,
+                         AddShortcutUseCase AddShortcutUseCase, MoveShortcutUseCase moveShortcutUseCase,
                          RemoveShortcutUseCase RemoveShortcutUseCase) {
         super(application);
         this.GetShortcutsUseCase = GetShortcutsUseCase;
         this.AddShortcutUseCase = AddShortcutUseCase;
+        this.moveShortcutUseCase = moveShortcutUseCase;
         this.RemoveShortcutUseCase = RemoveShortcutUseCase;
     }
     
@@ -52,6 +55,14 @@ public class HomeViewModel extends AndroidViewModel {
         executor.execute(() -> {
             AddShortcutUseCase.invoke(shortcut);
             loadShortcuts(); // обновляем список
+        });
+    }
+
+    public void moveShortcut(int fromPage, int fromRow, int fromCol,
+                             int toPage, int toRow, int toCol) {
+        executor.execute(() -> {
+            moveShortcutUseCase.invoke(fromPage, fromRow, fromCol, toPage, toRow, toCol);
+            loadShortcuts(); // refresh UI
         });
     }
 
