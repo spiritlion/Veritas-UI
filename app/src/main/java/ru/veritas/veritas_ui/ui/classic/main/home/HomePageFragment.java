@@ -15,11 +15,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
-
 import java.io.Serializable;
 import java.util.List;
+
+import ru.veritas.veritas_ui.R;
+import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 public class HomePageFragment extends Fragment {
     private static final String ARG_APPS_LIST = "apps_list";

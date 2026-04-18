@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModelFactory;

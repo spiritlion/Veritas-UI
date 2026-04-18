@@ -1,16 +1,16 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;// ViewPagerPagesAdapter.java
 
-import android.util.Log;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import java.util.List;
+
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
-
-import java.util.List;
 
 public class ViewPagerPagesAdapter extends FragmentStateAdapter {
     private int columnCount = 4; // или передавайте извне
@@ -22,11 +22,10 @@ public class ViewPagerPagesAdapter extends FragmentStateAdapter {
 
     public interface OnItemClickListener {
         void onItemClick(AppShortcutDTO shortcut);
-        void onItemLongClick(int i, int j, int k);
+        void onItemLongClick(int i, int j, int k, View v);
     }
 
-    private OnItemClickListener onItemClickListener;
-
+    private final OnItemClickListener onItemClickListener;
     private List<List<AppShortcutDTO>> pagesData; // список страниц, каждая страница — список приложений
 
     public ViewPagerPagesAdapter(OnItemClickListener onItemClickListener,
@@ -44,11 +43,6 @@ public class ViewPagerPagesAdapter extends FragmentStateAdapter {
         super(fragmentActivity);
         this.onItemClickListener = onItemClickListener;
         this.pagesData = ToDoubleListUseCase.invoke(pagesData);
-    }
-
-    public void setPagesData( List<List<List<AppShortcutDTO>>> pagesData) {
-        Log.d("s p d", (pagesData == null) + "");
-        this.pagesData = ToDoubleListUseCase.invoke(pagesData); // TODO не отображается рабочий стол
     }
 
 

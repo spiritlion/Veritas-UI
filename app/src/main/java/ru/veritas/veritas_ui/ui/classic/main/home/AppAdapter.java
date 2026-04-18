@@ -2,8 +2,6 @@ package ru.veritas.veritas_ui.ui.classic.main.home;
 
 import static android.view.View.INVISIBLE;
 
-import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,18 +14,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
 
+import java.util.List;
+
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
 
-import java.util.List;
-
 public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     private List<AppShortcutDTO> appsList;
     private ViewPagerPagesAdapter.OnItemClickListener listener;
-    private GetImageUseCase getImageUseCase;
-    private int pageIndex;
-    private int columnCount;
+    private final GetImageUseCase getImageUseCase;
+    private final int pageIndex;
+    private final int columnCount;
 
     public AppAdapter(List<AppShortcutDTO> appsList, Context context,
                       ViewPagerPagesAdapter.OnItemClickListener listener,
@@ -58,12 +56,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         holder.app.setOnLongClickListener(v -> {
             int row = position / columnCount;
             int col = position % columnCount;
-//            listener.onItemLongClick(pageIndex, row, col);
-            ClipData.Item item = new ClipData.Item(pageIndex + ":" + row + ":" + col);
-            ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
-            View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
-
-            v.startDragAndDrop(dragData, shadowBuilder, null, 0);
+            listener.onItemLongClick(pageIndex, row, col, v);
             return true;
         });
         holder.appName.setText(app.getAppName());

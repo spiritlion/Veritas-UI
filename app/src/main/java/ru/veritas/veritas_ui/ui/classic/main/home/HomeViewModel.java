@@ -20,11 +20,14 @@ import ru.veritas.veritas_ui.domain.use_cases.local.home.RemoveShortcutUseCase;
 
 public class HomeViewModel extends AndroidViewModel {
     private final MutableLiveData<HomeScreenState> state = new MutableLiveData<>();
+    private final MutableLiveData<HomeScreenMode> mode = new MutableLiveData<>(HomeScreenMode.Base);
     private final GetShortcutsUseCase GetShortcutsUseCase;
     private final AddShortcutUseCase AddShortcutUseCase;
     private final MoveShortcutUseCase moveShortcutUseCase;
     private final RemoveShortcutUseCase RemoveShortcutUseCase;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final MutableLiveData<Boolean> isMultiTouch = new MutableLiveData<>(false);
+
 
     public HomeViewModel(@NonNull Application application,
                          GetShortcutsUseCase GetShortcutsUseCase,
@@ -36,6 +39,10 @@ public class HomeViewModel extends AndroidViewModel {
         this.moveShortcutUseCase = moveShortcutUseCase;
         this.RemoveShortcutUseCase = RemoveShortcutUseCase;
     }
+
+    public void changeMode(HomeScreenMode mode) {
+        this.mode.postValue(mode);
+    }
     
     public void loadShortcuts() {
         state.postValue(HomeScreenState.Loading.INSTANCE);
@@ -43,7 +50,7 @@ public class HomeViewModel extends AndroidViewModel {
             try {
                 List<List<List<AppShortcutDTO>>> list = GetShortcutsUseCase.invoke();
                 Log.d("Home Screen", (list == null) + "");
-                state.postValue(new HomeScreenState.Content(list));
+                state.postValue(new HomeScreenState.Content(list, mode.getValue()));
             } catch (Exception e) {
                 Log.e("Home Screen", "Ошибка загрузки рабочего стола" + e.getMessage());
                 state.postValue(new HomeScreenState.Error("Ошибка загрузки рабочего стола" + e.getMessage(), this::loadShortcuts, "Повторить попытку"));
@@ -81,5 +88,18 @@ public class HomeViewModel extends AndroidViewModel {
 
     public LiveData<HomeScreenState> getState() {
         return state;
+    }
+
+    public MutableLiveData<HomeScreenMode> getMode() {
+        return mode;
+    }
+
+
+    public void setMultiTouch(boolean multiTouch) {
+        isMultiTouch.postValue(multiTouch);
+    }
+
+    public LiveData<Boolean> getIsMultiTouch() {
+        return isMultiTouch;
     }
 }

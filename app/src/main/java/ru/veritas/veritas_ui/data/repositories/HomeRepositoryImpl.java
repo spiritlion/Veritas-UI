@@ -1,7 +1,6 @@
 package ru.veritas.veritas_ui.data.repositories;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.util.Log;
 
 import com.google.gson.Gson;

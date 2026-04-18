@@ -5,7 +5,6 @@ import android.graphics.drawable.Drawable;
 
 import androidx.annotation.Nullable;
 
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 public class GetImageUseCase {

@@ -7,15 +7,19 @@ import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
 import ru.veritas.veritas_ui.R;
+import ru.veritas.veritas_ui.ui.classic.main.home.HomeScreenMode;
+import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
+import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModelFactory;
 import ru.veritas.veritas_ui.ui.classic.settings.SettingsActivity;
 
 public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
-    private MainPagerAdapter pagerAdapter;
+    private HomeViewModel homeViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,14 +28,30 @@ public class MainActivity extends AppCompatActivity {
 
         viewPager = findViewById(R.id.viewPager);
         viewPager.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
-        pagerAdapter = new MainPagerAdapter(this);
-        viewPager.setAdapter(pagerAdapter);
+        viewPager.setAdapter(new MainPagerAdapter(this));
         viewPager.setUserInputEnabled(true);
-        viewPager.setNestedScrollingEnabled(true);
 
+        homeViewModel = new ViewModelProvider(this, new HomeViewModelFactory(this))
+                .get(HomeViewModel.class);
 
+        // Блокировка по режиму Edit
+        homeViewModel.getMode().observe(this, mode -> {
+            Boolean isMultiTouch = homeViewModel.getIsMultiTouch().getValue();
+            if (isMultiTouch != null && isMultiTouch) return; // не мешаем мультитач
+            viewPager.setUserInputEnabled(mode != HomeScreenMode.Edit);
+        });
+
+        // Блокировка по мультитач (приоритет выше)
+        homeViewModel.getIsMultiTouch().observe(this, isMultiTouch -> {
+            if (isMultiTouch) {
+                viewPager.setUserInputEnabled(false);
+            } else {
+                // Восстанавливаем с учётом режима
+                boolean enabled = homeViewModel.getMode().getValue() != HomeScreenMode.Edit;
+                viewPager.setUserInputEnabled(enabled);
+            }
+        });
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -47,5 +67,4 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
 }

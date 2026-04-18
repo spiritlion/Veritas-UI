@@ -1,7 +1,10 @@
+// HomeScreenFragment.java
+
 package ru.veritas.veritas_ui.ui.classic.main.home;
 
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,20 +13,22 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
+import ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer;
 
-public class HomeScreenFragment extends Fragment  {
+// HomeScreenFragment.java
+
+public class HomeScreenFragment extends Fragment {
     private ViewPager2 viewPager;
+    private ScalableContainer scalableContainer;
     private ViewPagerPagesAdapter adapter;
     private HomeViewModel viewModel;
+    private boolean editModeTriggered = false;
 
     @Nullable
     @Override
@@ -36,45 +41,86 @@ public class HomeScreenFragment extends Fragment  {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewPager = view.findViewById(R.id.viewPager);
+        scalableContainer = view.findViewById(R.id.scalableContainer);
+        scalableContainer.setViewPager(viewPager);
 
         viewModel = new ViewModelProvider(requireActivity(),
                 new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
 
+        scalableContainer.setOnMultiTouchListener(isMultiTouch -> {
+            viewModel.setMultiTouch(isMultiTouch);
+        });
 
+        // Настройка обработчика жеста сведения
+        scalableContainer.setOnScaleListener(new ScalableContainer.OnScaleListener() {
+            @Override
+            public void onScale(float scaleFactor) {
+                if (scaleFactor < 1.0f && !editModeTriggered) {
+                    editModeTriggered = true;
+                    viewModel.changeMode(HomeScreenMode.Edit);
+                    scalableContainer.setPadding(60, 60, 60, 60);
+                    Toast.makeText(requireContext(), "Режим редактирования", Toast.LENGTH_SHORT).show();
+                } else if (scaleFactor > 1.0f && !editModeTriggered) {
+                    editModeTriggered = true;
+                    viewModel.changeMode(HomeScreenMode.Base);
+                    scalableContainer.setPadding(20, 20, 20, 20);
+                    Toast.makeText(requireContext(), "Обычный режим", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onScaleBegin() {
+                editModeTriggered = false;
+            }
+
+            @Override
+            public void onScaleEnd() {
+                // можно добавить логику, если нужно
+            }
+        });
+
+        // Остальной код без изменений (загрузка данных, адаптер и т.д.)
         viewModel.loadShortcuts();
-        viewModel.getState().observe(getViewLifecycleOwner(),
-            state -> {
-                if (state instanceof HomeScreenState.Loading) {
-                    Log.d("Home f", "loading");
-                    // TODO
-                } else if (state instanceof HomeScreenState.Content) {
-                    Log.d("Home f", "content");
-                    adapter = new ViewPagerPagesAdapter(
+        viewModel.getState().observe(getViewLifecycleOwner(), state -> {
+            if (state instanceof HomeScreenState.Loading) {
+                // TODO показать прогресс
+            } else if (state instanceof HomeScreenState.Content) {
+                // При каждом обновлении Content пересоздаём адаптер, чтобы отобразить актуальные данные
+                adapter = new ViewPagerPagesAdapter(
                         new ViewPagerPagesAdapter.OnItemClickListener() {
                             @Override
                             public void onItemClick(AppShortcutDTO shortcut) {
-                                // Запускаем приложение
+                                // Проверяем режим: если Edit, то не запускаем приложение
+                                if (viewModel.getMode().getValue() == HomeScreenMode.Edit) {
+                                    Toast.makeText(requireContext(), "Режим редактирования: нажмите и удерживайте для перемещения", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
                                 LaunchAppUseCase launchUseCase = new LaunchAppUseCase(requireContext());
                                 launchUseCase.invoke(shortcut.getPackageName());
                             }
 
                             @Override
-                            public void onItemLongClick(int i, int j, int k) {
-                                viewModel.removeShortcut(i, j, k);
-                                Toast.makeText(requireContext(), "Ярлык удалён", Toast.LENGTH_SHORT).show();
+                            public void onItemLongClick(int page, int row, int col, View v) {
+                                HomeScreenMode currentMode = viewModel.getMode().getValue();
+                                if (currentMode == HomeScreenMode.Base) {
+                                    viewModel.removeShortcut(page, row, col);
+                                    Toast.makeText(requireContext(), "Ярлык удалён", Toast.LENGTH_SHORT).show();
+                                } else if (currentMode == HomeScreenMode.Edit) {
+                                    // Начинаем drag & drop
+                                    ClipData.Item item = new ClipData.Item(page + ":" + row + ":" + col);
+                                    ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                                    View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+                                    v.startDragAndDrop(dragData, shadowBuilder, null, 0);
+                                }
                             }
                         },
                         requireActivity(),
                         ((HomeScreenState.Content) state).getApps()
-                    );
-                    viewPager.setAdapter(adapter);
-                } else if (state instanceof HomeScreenState.Error) {
-                    Log.d("Home f", "error");
-                    // TODO
-                }
+                );
+                viewPager.setAdapter(adapter);
+            } else if (state instanceof HomeScreenState.Error) {
+                // TODO обработка ошибки
             }
-        );
-
-//        viewPager.setLayoutManager(new GridLayoutManager(requireContext(), 4));
+        });
     }
 }
