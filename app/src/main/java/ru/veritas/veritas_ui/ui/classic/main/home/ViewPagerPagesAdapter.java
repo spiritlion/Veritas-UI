@@ -13,50 +13,40 @@ import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
 
 public class ViewPagerPagesAdapter extends FragmentStateAdapter {
-    private int columnCount = 4; // или передавайте извне
-
-    public ViewPagerPagesAdapter(OnItemClickListener listener, FragmentActivity fragmentActivity) {
-        super(fragmentActivity);
-        this.onItemClickListener = listener;
-    }
-
-    public interface OnItemClickListener {
-        void onItemClick(AppShortcutDTO shortcut);
-        void onItemLongClick(int i, int j, int k, View v);
-    }
-
+    private final int columnCount;
     private final OnItemClickListener onItemClickListener;
-    private List<List<AppShortcutDTO>> pagesData; // список страниц, каждая страница — список приложений
+    private int pageCount = 0;
 
-    public ViewPagerPagesAdapter(OnItemClickListener onItemClickListener,
-                                 @NonNull FragmentActivity fragmentActivity,
-                                 List<List<List<AppShortcutDTO>>> pagesData,
+    public ViewPagerPagesAdapter(OnItemClickListener listener,
+                                 @NonNull FragmentActivity activity,
                                  int columnCount) {
-        super(fragmentActivity);
-        this.onItemClickListener = onItemClickListener;
+        super(activity);
+        this.onItemClickListener = listener;
         this.columnCount = columnCount;
-        this.pagesData = ToDoubleListUseCase.invoke(pagesData);
     }
 
-    public ViewPagerPagesAdapter(OnItemClickListener onItemClickListener, @NonNull FragmentActivity fragmentActivity,
-                                 List<List<List<AppShortcutDTO>>> pagesData) {
-        super(fragmentActivity);
-        this.onItemClickListener = onItemClickListener;
-        this.pagesData = ToDoubleListUseCase.invoke(pagesData);
+    public void setPageCount(int newCount) {
+        if (this.pageCount != newCount) {
+            this.pageCount = newCount;
+            notifyDataSetChanged();
+        }
     }
-
 
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        List<AppShortcutDTO> appsList = pagesData.get(position);
-        HomePageFragment fragment = HomePageFragment.newInstance(appsList, position, columnCount);
+        HomePageFragment fragment = HomePageFragment.newInstance(position, columnCount);
         fragment.setOnItemClickListener(onItemClickListener);
         return fragment;
     }
 
     @Override
     public int getItemCount() {
-        return pagesData != null ? pagesData.size() : 0;
+        return pageCount;
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(AppShortcutDTO shortcut);
+        void onItemLongClick(int i, int j, int k, View v);
     }
 }

@@ -21,8 +21,6 @@ import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
 import ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer;
 
-// HomeScreenFragment.java
-
 public class HomeScreenFragment extends Fragment {
     private ViewPager2 viewPager;
     private ScalableContainer scalableContainer;
@@ -79,6 +77,38 @@ public class HomeScreenFragment extends Fragment {
             }
         });
 
+        adapter = new ViewPagerPagesAdapter(
+                new ViewPagerPagesAdapter.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AppShortcutDTO shortcut) {
+                        // Проверяем режим: если Edit, то не запускаем приложение
+                        if (viewModel.getMode().getValue() == HomeScreenMode.Edit) {
+                            Toast.makeText(requireContext(), "Режим редактирования: нажмите и удерживайте для перемещения", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        LaunchAppUseCase launchUseCase = new LaunchAppUseCase(requireContext());
+                        launchUseCase.invoke(shortcut.getPackageName());
+                    }
+
+                    @Override
+                    public void onItemLongClick(int page, int row, int col, View v) {
+                        HomeScreenMode currentMode = viewModel.getMode().getValue();
+                        if (currentMode == HomeScreenMode.Base) {
+                            viewModel.removeShortcut(page, row, col);
+                            Toast.makeText(requireContext(), "Ярлык удалён", Toast.LENGTH_SHORT).show();
+                        } else if (currentMode == HomeScreenMode.Edit) {
+                            // Начинаем drag & drop
+                            ClipData.Item item = new ClipData.Item(page + ":" + row + ":" + col);
+                            ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                            View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+                            v.startDragAndDrop(dragData, shadowBuilder, null, 0);
+                        }
+                    }
+                },
+                requireActivity(), 4);
+        viewPager.setAdapter(adapter);
+
+
         // Остальной код без изменений (загрузка данных, адаптер и т.д.)
         viewModel.loadShortcuts();
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
@@ -86,38 +116,7 @@ public class HomeScreenFragment extends Fragment {
                 // TODO показать прогресс
             } else if (state instanceof HomeScreenState.Content) {
                 // При каждом обновлении Content пересоздаём адаптер, чтобы отобразить актуальные данные
-                adapter = new ViewPagerPagesAdapter(
-                        new ViewPagerPagesAdapter.OnItemClickListener() {
-                            @Override
-                            public void onItemClick(AppShortcutDTO shortcut) {
-                                // Проверяем режим: если Edit, то не запускаем приложение
-                                if (viewModel.getMode().getValue() == HomeScreenMode.Edit) {
-                                    Toast.makeText(requireContext(), "Режим редактирования: нажмите и удерживайте для перемещения", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-                                LaunchAppUseCase launchUseCase = new LaunchAppUseCase(requireContext());
-                                launchUseCase.invoke(shortcut.getPackageName());
-                            }
-
-                            @Override
-                            public void onItemLongClick(int page, int row, int col, View v) {
-                                HomeScreenMode currentMode = viewModel.getMode().getValue();
-                                if (currentMode == HomeScreenMode.Base) {
-                                    viewModel.removeShortcut(page, row, col);
-                                    Toast.makeText(requireContext(), "Ярлык удалён", Toast.LENGTH_SHORT).show();
-                                } else if (currentMode == HomeScreenMode.Edit) {
-                                    // Начинаем drag & drop
-                                    ClipData.Item item = new ClipData.Item(page + ":" + row + ":" + col);
-                                    ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
-                                    View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
-                                    v.startDragAndDrop(dragData, shadowBuilder, null, 0);
-                                }
-                            }
-                        },
-                        requireActivity(),
-                        ((HomeScreenState.Content) state).getApps()
-                );
-                viewPager.setAdapter(adapter);
+                adapter.setPageCount(((HomeScreenState.Content) state).getApps().size());
             } else if (state instanceof HomeScreenState.Error) {
                 // TODO обработка ошибки
             }
