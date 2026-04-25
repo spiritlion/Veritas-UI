@@ -1,6 +1,7 @@
 package ru.veritas.veritas_ui.domain.use_cases.local.home;
 
 import android.content.pm.PackageManager;
+import android.util.Log;
 
 import java.util.List;
 

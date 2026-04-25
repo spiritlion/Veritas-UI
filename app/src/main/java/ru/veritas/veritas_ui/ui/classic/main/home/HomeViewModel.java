@@ -49,7 +49,6 @@ public class HomeViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 List<List<List<AppShortcutDTO>>> list = GetShortcutsUseCase.invoke();
-                Log.d("Home Screen", (list == null) + "");
                 state.postValue(new HomeScreenState.Content(list, mode.getValue()));
             } catch (Exception e) {
                 Log.e("Home Screen", "Ошибка загрузки рабочего стола" + e.getMessage());

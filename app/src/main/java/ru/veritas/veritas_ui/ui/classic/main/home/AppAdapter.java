@@ -1,8 +1,10 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;
 
 import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,10 +50,12 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AppShortcutDTO app = appsList.get(position);
+        Log.d("AppAdapter", app == null ? "null" : app.getAppName());
         if (app == null) {
-            holder.setVisibility(INVISIBLE);
+            holder.app.setVisibility(INVISIBLE);
             return;
         }
+        holder.app.setVisibility(VISIBLE);
         holder.app.setOnClickListener(v -> listener.onItemClick(app));
         holder.app.setOnLongClickListener(v -> {
             int row = position / columnCount;
