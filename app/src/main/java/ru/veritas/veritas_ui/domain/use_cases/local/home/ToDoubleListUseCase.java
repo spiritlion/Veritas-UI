@@ -29,7 +29,6 @@ public class ToDoubleListUseCase {
         }
         return doubleList;
     }
-
     public static List<List<AppShortcutDTO>> invoke(List<List<List<AppShortcutDTO>>> tripleList, int sizeX, int sizeY) {
         List<List<AppShortcutDTO>> doubleList = new ArrayList<>();
 
