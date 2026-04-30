@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp"
-    app:cardPreventCornerOverlap="true"
+<LinearLayout
     android:id="@+id/app"
-    app:contentPadding="8dp">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="80dp"
+    android:layout_height="100dp"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp">
 
     <LinearLayout
+        android:id="@+id/inside_app"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical"
-        android:gravity="center"
-        android:padding="8dp">
+        android:gravity="center">
 
         <ImageView
             android:id="@+id/app_icon"
@@ -24,6 +23,7 @@
             android:scaleType="centerInside" />
 
         <TextView
+            android:textColor="@color/white"
             android:id="@+id/app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -34,5 +34,4 @@
             android:gravity="center" />
 
     </LinearLayout>
-
-</com.google.android.material.card.MaterialCardView>
+</LinearLayout>

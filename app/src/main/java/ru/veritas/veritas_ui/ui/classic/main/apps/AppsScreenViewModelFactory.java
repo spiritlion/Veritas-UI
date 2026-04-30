@@ -28,8 +28,8 @@ public class AppsScreenViewModelFactory implements ViewModelProvider.Factory {
         if (modelClass.isAssignableFrom(AppsScreenViewModel.class)) {
             PackageManagerDataSource dataSource = new PackageManagerDataSource(context);
             AppRepositoryImpl repository = new AppRepositoryImpl(dataSource);
-            GetInstalledAppsUseCase getAppsUseCase = new GetInstalledAppsUseCase(repository);
-            LaunchAppUseCase launchAppUseCase = new LaunchAppUseCase(context);
+            GetInstalledAppsUseCase getAppsUseCase = GetInstalledAppsUseCase.create(repository);
+            LaunchAppUseCase launchAppUseCase = LaunchAppUseCase.create(context);
             return (T) new AppsScreenViewModel((android.app.Application) context.getApplicationContext(), getAppsUseCase, launchAppUseCase);
         }
         throw new IllegalArgumentException("Unknown ViewModel class");

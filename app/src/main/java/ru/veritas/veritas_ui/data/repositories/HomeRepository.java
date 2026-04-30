@@ -13,4 +13,5 @@ public interface HomeRepository {
     void removeShortcut(int i, int j, int k);
     boolean isShortcutExists(String packageName);
     AppShortcutDTO getShortcut(int i, int j, int k);
+    void saveShortcuts(List<List<List<AppShortcutDTO>>> shortcuts);
 }

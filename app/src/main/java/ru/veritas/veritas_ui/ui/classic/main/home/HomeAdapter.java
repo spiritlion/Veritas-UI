@@ -90,7 +90,7 @@ public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.PageViewHolder
         AppGridAdapter(List<AppShortcutDTO> shortcuts, OnItemClickListener listener, Context context) {
             this.shortcuts = shortcuts;
             this.listener = listener;
-            this.getImageUseCase = new GetImageUseCase(context.getPackageManager());
+            this.getImageUseCase = GetImageUseCase.create(context.getPackageManager());
         }
 
         @NonNull

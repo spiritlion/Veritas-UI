@@ -10,10 +10,10 @@ public interface MoveShortcutUseCase {
 
     static MoveShortcutUseCase create(HomeRepository repository) {
         return (fromPage, fromRow, fromCol, toPage, toRow, toCol) -> {
-            AppShortcutDTO app = repository.getShortcut(toPage, toRow, toCol);
-            repository.addShortcut(toPage, toRow, toCol,
-                    repository.getShortcut(fromPage, fromRow, fromCol));
-            repository.addShortcut(fromPage, fromRow, fromCol, app);
+            AppShortcutDTO fromApp = repository.getShortcut(fromPage, fromRow, fromCol);
+            AppShortcutDTO toApp = repository.getShortcut(toPage, toRow, toCol);
+            repository.addShortcut(toPage, toRow, toCol, fromApp);
+            repository.addShortcut(fromPage, fromRow, fromCol, toApp);
         };
     }
 }

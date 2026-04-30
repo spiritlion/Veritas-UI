@@ -29,21 +29,19 @@ public class HomeRepositoryImpl implements HomeRepository {
     public List<List<List<AppShortcutDTO>>> getShortcuts() {
         try (FileInputStream fileInputStream = context.openFileInput("home_arh.json");
              InputStreamReader streamReader = new InputStreamReader(fileInputStream)) {
-            Log.e("get s", "Файл найден");
             Gson gson = new Gson();
             Type type = new TypeToken<List<List<List<AppShortcutDTO>>>>(){}.getType();
             return gson.fromJson(streamReader, type);
         } catch (FileNotFoundException e) {
-            Log.e("get s", "Файл не найден");
+            Log.e("get s", "Файл не найден, создаю новый");
             createShortcuts();
-            getShortcuts();
+            // После создания читаем заново
+            return getShortcuts();
         } catch (IOException ex) {
-            Log.e("get s", "IO");
-            ex.printStackTrace();
+            Log.e("get s", "Ошибка ввода-вывода", ex);
+            return new ArrayList<>(); // или брось RuntimeException
         }
-        return null;
     }
-
 
 //    public List<List<List<AppShortcut>>> getShortcuts() {
 //        List<List<List<AppShortcut>>> shortcuts = new ArrayList<>();
@@ -136,7 +134,7 @@ public class HomeRepositoryImpl implements HomeRepository {
         saveShortcuts(shortcuts);
     }
 
-    private void saveShortcuts(List<List<List<AppShortcutDTO>>> shortcuts) {
+    public void saveShortcuts(List<List<List<AppShortcutDTO>>> shortcuts) {
         Gson gson = new Gson();
         String data = gson.toJson(shortcuts);
         Log.d("json", data);

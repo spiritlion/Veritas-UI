@@ -1,27 +1,15 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.VeritasUI" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-        <item name="background">@android:color/transparent</item>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Базовая тема приложения (оставьте как есть) -->
+    <style name="Theme.VeritasUI" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- ваши настройки -->
     </style>
 
-    <style name="Theme.VeritasUI" parent="Base.Theme.VeritasUI" />
-
-
-    <style name="Theme.AppCompat.Translucent" parent="Theme.AppCompat.NoActionBar" >
-        <!--on below line we are setting background as transparent color-->
-        <item name="android:background">@android:color/transparent</item>
+    <!-- Тема для домашнего экрана с обоями -->
+    <style name="Theme.HomeScreen" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowShowWallpaper">true</item>
-        <!--on below line we are displaying the windowNotitle as true as we are not displaying our status bar-->
-        <item name="android:windowNoTitle">true</item>
-        <!--on below line we are setting our window background as transparent color-->
         <item name="android:windowBackground">@android:color/transparent</item>
-        <!--on below line we are setting color background cache hint as null-->
-        <item name="android:colorBackgroundCacheHint">@null</item>
-        <!--on below line we are adding a window translucent as true-->
-        <item name="android:windowIsTranslucent">true</item>
-        <!--on below line we are adding a window animationstyle-->
-        <item name="android:windowAnimationStyle">@android:style/Animation</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

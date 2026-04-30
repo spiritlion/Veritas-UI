@@ -46,7 +46,6 @@ public class ToDoubleListUseCase {
         }
 
         // 2. Преобразовать плоский список в матрицу sizeX x sizeY
-        int totalNeeded = sizeX * sizeY;
         int flatSize = flatList.size();
         for (int i = 0; i < sizeX; i++) {
             List<AppShortcutDTO> row = new ArrayList<>(sizeY);

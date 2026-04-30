@@ -3,12 +3,31 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/scalableContainer"
     android:layout_width="match_parent"
-    android:padding="20dp"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+
+    <!-- Индикатор левого края -->
+    <View
+        android:id="@+id/leftEdgeIndicator"
+        android:layout_width="16dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="#5D808080"
+        android:visibility="gone" />
+
+    <!-- Индикатор правого края -->
+    <View
+        android:id="@+id/rightEdgeIndicator"
+        android:layout_width="16dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="#5D808080"
+        android:visibility="gone" />
 
 </ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer>

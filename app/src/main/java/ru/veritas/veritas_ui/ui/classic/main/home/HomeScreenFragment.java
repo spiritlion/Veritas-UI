@@ -1,10 +1,11 @@
-// HomeScreenFragment.java
-
 package ru.veritas.veritas_ui.ui.classic.main.home;
 
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,16 @@ public class HomeScreenFragment extends Fragment {
     private ViewPagerPagesAdapter adapter;
     private HomeViewModel viewModel;
     private boolean editModeTriggered = false;
+    private Handler handler = new Handler();
+    private Runnable pageFlipRunnable;
+    private boolean isDragging = false;
+//    private int originalOffscreenLimit = 1;
+    private long lastFlipTime = 0;
+    private static final long MIN_FLIP_INTERVAL_MS = 600; // задержка перед следующим перелистыванием
+    private View leftIndicator;
+    private View rightIndicator;
+    private int currentPageDuringDrag = -1;
+    private int totalPagesDuringDrag = 0;
 
     @Nullable
     @Override
@@ -49,6 +60,10 @@ public class HomeScreenFragment extends Fragment {
             viewModel.setMultiTouch(isMultiTouch);
         });
 
+        leftIndicator = view.findViewById(R.id.leftEdgeIndicator);
+        rightIndicator = view.findViewById(R.id.rightEdgeIndicator);
+
+        viewPager.animate().scaleX(1.0f).scaleY(1.0f).setDuration(200);
         // Настройка обработчика жеста сведения
         scalableContainer.setOnScaleListener(new ScalableContainer.OnScaleListener() {
             @Override
@@ -56,12 +71,12 @@ public class HomeScreenFragment extends Fragment {
                 if (scaleFactor < 1.0f && !editModeTriggered) {
                     editModeTriggered = true;
                     viewModel.changeMode(HomeScreenMode.Edit);
-                    scalableContainer.setPadding(60, 60, 60, 60);
+                    viewPager.animate().scaleX(0.85f).scaleY(0.85f).setDuration(200);
                     Toast.makeText(requireContext(), "Режим редактирования", Toast.LENGTH_SHORT).show();
                 } else if (scaleFactor > 1.0f && !editModeTriggered) {
                     editModeTriggered = true;
                     viewModel.changeMode(HomeScreenMode.Base);
-                    scalableContainer.setPadding(20, 20, 20, 20);
+                    viewPager.animate().scaleX(1.0f).scaleY(1.0f).setDuration(200);
                     Toast.makeText(requireContext(), "Обычный режим", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -77,16 +92,61 @@ public class HomeScreenFragment extends Fragment {
             }
         });
 
+        scalableContainer.setOnDragListener((v, event) -> {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    isDragging = true;
+                    // Узнаём текущую страницу и общее количество
+                    currentPageDuringDrag = viewPager.getCurrentItem();
+                    totalPagesDuringDrag = adapter.getItemCount();
+                    updateEdgeIndicators(currentPageDuringDrag);
+                    return true;
+
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    if (!isDragging) return true;
+                    float x = event.getX();
+                    int containerWidth = scalableContainer.getWidth();
+                    int edgeThreshold = (int) (50 * getResources().getDisplayMetrics().density);
+                    int newPage = viewPager.getCurrentItem();
+
+                    // Обновляем индикаторы, если страница изменилась
+                    if (newPage != currentPageDuringDrag) {
+                        currentPageDuringDrag = newPage;
+                        updateEdgeIndicators(currentPageDuringDrag);
+                    }
+
+                    // Логика перелистывания (без изменений)
+                    if (x < edgeThreshold && currentPageDuringDrag > 0) {
+                        schedulePageFlip(currentPageDuringDrag - 1);
+                    } else if (x > containerWidth - edgeThreshold && currentPageDuringDrag < totalPagesDuringDrag - 1) {
+                        schedulePageFlip(currentPageDuringDrag + 1);
+                    } else {
+                        cancelPageFlip();
+                    }
+                    return true;
+
+                case DragEvent.ACTION_DROP:
+                case DragEvent.ACTION_DRAG_ENDED:
+                    isDragging = false;
+                    cancelPageFlip();
+                    // Немедленно плавно прячем оба индикатора
+                    hideAllEdgeIndicators();
+                    // Восстановление offscreenPageLimit (если ещё нужно)...
+                    return true;
+            }
+            return false;
+        });
+
+
         adapter = new ViewPagerPagesAdapter(
                 new ViewPagerPagesAdapter.OnItemClickListener() {
                     @Override
                     public void onItemClick(AppShortcutDTO shortcut) {
-                        // Проверяем режим: если Edit, то не запускаем приложение
                         if (viewModel.getMode().getValue() == HomeScreenMode.Edit) {
                             Toast.makeText(requireContext(), "Режим редактирования: нажмите и удерживайте для перемещения", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        LaunchAppUseCase launchUseCase = new LaunchAppUseCase(requireContext());
+                        LaunchAppUseCase launchUseCase = LaunchAppUseCase.create(requireContext());
                         launchUseCase.invoke(shortcut.getPackageName());
                     }
 
@@ -97,7 +157,10 @@ public class HomeScreenFragment extends Fragment {
                             viewModel.removeShortcut(page, row, col);
                             Toast.makeText(requireContext(), "Ярлык удалён", Toast.LENGTH_SHORT).show();
                         } else if (currentMode == HomeScreenMode.Edit) {
+                            Log.d("DragDrop", String.format("%d %d %d",
+                                    page, row, col));
                             // Начинаем drag & drop
+                            viewModel.setDragSource(page, row, col);
                             ClipData.Item item = new ClipData.Item(page + ":" + row + ":" + col);
                             ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
                             View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
@@ -116,10 +179,69 @@ public class HomeScreenFragment extends Fragment {
                 // TODO показать прогресс
             } else if (state instanceof HomeScreenState.Content) {
                 // При каждом обновлении Content пересоздаём адаптер, чтобы отобразить актуальные данные
-                adapter.setPageCount(((HomeScreenState.Content) state).getApps().size());
+                int pages = ((HomeScreenState.Content) state).getApps().size();
+                adapter.setPageCount(pages);
+                viewPager.setOffscreenPageLimit(Math.max(1, pages - 1));
             } else if (state instanceof HomeScreenState.Error) {
                 // TODO обработка ошибки
             }
         });
+    }
+
+    private void schedulePageFlip(int targetPage) {
+        if (pageFlipRunnable != null && pageFlipRunnable.hashCode() == targetPage) {
+            return; // уже запланирован переход на эту же страницу
+        }
+        // Проверяем кулдаун
+        if (System.currentTimeMillis() - lastFlipTime < MIN_FLIP_INTERVAL_MS) {
+            return; // слишком рано для нового перелистывания
+        }
+        cancelPageFlip();
+        pageFlipRunnable = () -> {
+            viewPager.setCurrentItem(targetPage, true);
+            lastFlipTime = System.currentTimeMillis(); // запоминаем время перехода
+        };
+        handler.postDelayed(pageFlipRunnable, 300);
+    }
+    private void cancelPageFlip() {
+        if (pageFlipRunnable != null) {
+            handler.removeCallbacks(pageFlipRunnable);
+            pageFlipRunnable = null;
+        }
+    }
+
+    private void updateEdgeIndicators(int currentPage) {
+        if (!isDragging) {
+            // Если перетаскивание не активно – принудительно прячем всё
+            hideAllEdgeIndicators();
+            return;
+        }
+        // Левый индикатор
+        animateIndicatorVisibility(leftIndicator, currentPage > 0);
+        // Правый индикатор
+        animateIndicatorVisibility(rightIndicator, currentPage < totalPagesDuringDrag - 1);
+    }
+
+    private void hideAllEdgeIndicators() {
+        animateIndicatorVisibility(leftIndicator, false);
+        animateIndicatorVisibility(rightIndicator, false);
+    }
+
+    private void animateIndicatorVisibility(View indicator, boolean show) {
+        if (show) {
+            // Плавное появление
+            if (indicator.getVisibility() != View.VISIBLE) {
+                indicator.setAlpha(0f);
+                indicator.setVisibility(View.VISIBLE);
+                indicator.animate().alpha(1f).setDuration(200).start();
+            }
+        } else {
+            // Плавное исчезновение, после которого скрываем совсем
+            if (indicator.getVisibility() == View.VISIBLE) {
+                indicator.animate().alpha(0f).setDuration(200).withEndAction(() -> {
+                    indicator.setVisibility(View.GONE);
+                }).start();
+            }
+        }
     }
 }

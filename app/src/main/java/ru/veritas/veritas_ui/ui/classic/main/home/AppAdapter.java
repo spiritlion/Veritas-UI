@@ -9,9 +9,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
@@ -28,7 +30,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     private final GetImageUseCase getImageUseCase;
     private final int pageIndex;
     private final int columnCount;
-
+    private int itemHeightPx = ViewGroup.LayoutParams.WRAP_CONTENT;
     public AppAdapter(List<AppShortcutDTO> appsList, Context context,
                       ViewPagerPagesAdapter.OnItemClickListener listener,
                       int pageIndex, int columnCount) {
@@ -36,7 +38,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         this.listener = listener;
         this.pageIndex = pageIndex;
         this.columnCount = columnCount;
-        this.getImageUseCase = new GetImageUseCase(context.getPackageManager());
+        this.getImageUseCase = GetImageUseCase.create(context.getPackageManager());
     }
 
     @NonNull
@@ -44,22 +46,35 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_app, parent, false);
+        // Задаём высоту из расчёта
+        RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) view.getLayoutParams();
+        if (lp == null) {
+            lp = new RecyclerView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    itemHeightPx
+            );
+        } else {
+            lp.height = itemHeightPx;
+        }
+        view.setLayoutParams(lp);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AppShortcutDTO app = appsList.get(position);
-        Log.d("AppAdapter", app == null ? "null" : app.getAppName());
         if (app == null) {
-            holder.app.setVisibility(INVISIBLE);
+            holder.inside_app.setVisibility(INVISIBLE);
             return;
         }
-        holder.app.setVisibility(VISIBLE);
+        holder.inside_app.setVisibility(VISIBLE);
         holder.app.setOnClickListener(v -> listener.onItemClick(app));
+//        Log.d("AppAdapter", position + " " + app.getAppName() + " " + row + " " + col);
         holder.app.setOnLongClickListener(v -> {
-            int row = position / columnCount;
-            int col = position % columnCount;
+            int pos = holder.getAdapterPosition();
+            if (pos == RecyclerView.NO_POSITION) return false;
+            int row = pos / columnCount;
+            int col = pos % columnCount;
             listener.onItemLongClick(pageIndex, row, col, v);
             return true;
         });
@@ -73,28 +88,73 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     }
 
     public void updateData(List<AppShortcutDTO> newList) {
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(new AppDiffCallback(this.appsList, newList));
         this.appsList = newList;
-        notifyDataSetChanged();
+        result.dispatchUpdatesTo(this);
     }
 
     public void setListener(ViewPagerPagesAdapter.OnItemClickListener listener) {
         this.listener = listener;
     }
 
+    public void setItemHeightPx(int heightPx) {
+        if (heightPx != itemHeightPx && heightPx > 0) {
+            itemHeightPx = heightPx;
+            notifyDataSetChanged(); // обновить все элементы с новой высотой
+        }
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView appIcon;
         TextView appName;
-        MaterialCardView app;
+        LinearLayout app;
+        LinearLayout inside_app;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             app = itemView.findViewById(R.id.app);
             appIcon = itemView.findViewById(R.id.app_icon);
             appName = itemView.findViewById(R.id.app_name);
+            inside_app = itemView.findViewById(R.id.inside_app);
+        }
+    }
+
+    private static class AppDiffCallback extends DiffUtil.Callback {
+        private final List<AppShortcutDTO> oldList;
+        private final List<AppShortcutDTO> newList;
+
+        AppDiffCallback(List<AppShortcutDTO> oldList, List<AppShortcutDTO> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
         }
 
-        void setVisibility(int visibility) {
-            app.setVisibility(visibility);
+        @Override
+        public int getOldListSize() {
+            return oldList == null ? 0 : oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList == null ? 0 : newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            AppShortcutDTO oldItem = oldList.get(oldItemPosition);
+            AppShortcutDTO newItem = newList.get(newItemPosition);
+            if (oldItem == null && newItem == null) return true;
+            if (oldItem == null || newItem == null) return false;
+            // Use package name as the unique identifier
+            return oldItem.getPackageName().equals(newItem.getPackageName());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            AppShortcutDTO oldItem = oldList.get(oldItemPosition);
+            AppShortcutDTO newItem = newList.get(newItemPosition);
+            if (oldItem == null && newItem == null) return true;
+            if (oldItem == null || newItem == null) return false;
+            return oldItem.getAppName().equals(newItem.getAppName());
         }
     }
 }

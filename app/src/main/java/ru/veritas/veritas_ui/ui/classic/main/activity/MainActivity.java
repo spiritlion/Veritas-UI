@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,16 +21,33 @@ public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
     private HomeViewModel homeViewModel;
+    private View dimOverlay;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        );
+
+        dimOverlay = findViewById(R.id.dimOverlay);
+
         viewPager = findViewById(R.id.viewPager);
         viewPager.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
         viewPager.setAdapter(new MainPagerAdapter(this));
         viewPager.setUserInputEnabled(true);
+
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                animateDimOverlay(position);
+            }
+        });
+        animateDimOverlay(viewPager.getCurrentItem());
+
 
         homeViewModel = new ViewModelProvider(this, new HomeViewModelFactory(this))
                 .get(HomeViewModel.class);
@@ -67,4 +85,14 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+    private void animateDimOverlay(int page) {
+        // page 0 – домашний экран (обои видны), иначе экран приложений
+        float targetAlpha = (page == 0) ? 0f : 1f;
+        dimOverlay.animate()
+                .alpha(targetAlpha)
+                .setDuration(300)
+                .start();
+    }
+
 }
