@@ -7,10 +7,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import java.util.List;
-
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
 
 public class ViewPagerPagesAdapter extends FragmentStateAdapter {
     private final int columnCount;

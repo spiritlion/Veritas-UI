@@ -7,8 +7,6 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-
 import ru.veritas.veritas_ui.data.repositories.HomeRepositoryImpl;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.AddShortcutFirstUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.AddShortcutUseCase;

@@ -1,14 +1,12 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;
 
 import android.content.ClipData;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,7 +14,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.List;
+
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;

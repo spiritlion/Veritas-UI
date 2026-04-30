@@ -2,7 +2,9 @@ package ru.veritas.veritas_ui.domain.use_cases.local.home;
 
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
+
 import androidx.annotation.Nullable;
+
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 @FunctionalInterface
