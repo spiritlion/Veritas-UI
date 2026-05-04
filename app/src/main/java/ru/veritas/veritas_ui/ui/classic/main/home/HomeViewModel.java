@@ -16,9 +16,11 @@ import java.util.concurrent.Executors;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.AddShortcutFirstUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.AddShortcutUseCase;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.favorites.GetFavoritesUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetShortcutsUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.MoveShortcutUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.RemoveShortcutUseCase;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.favorites.SetFavoritesUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.SetShortcutsUseCase;
 
 public class HomeViewModel extends AndroidViewModel {
@@ -30,10 +32,16 @@ public class HomeViewModel extends AndroidViewModel {
     private final MoveShortcutUseCase MoveShortcutUseCase;
     private final SetShortcutsUseCase SetShortcutsUseCase;
     private final RemoveShortcutUseCase RemoveShortcutUseCase;
+    private final MutableLiveData<List<AppShortcutDTO>> favoritesLiveData = new MutableLiveData<>(new ArrayList<>());
+    private final GetFavoritesUseCase getFavoritesUseCase;
+    private final SetFavoritesUseCase setFavoritesUseCase;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final MutableLiveData<Boolean> isMultiTouch = new MutableLiveData<>(false);
 
     private final List<List<List<AppShortcutDTO>>> currentShortcuts = new ArrayList<>();
+
+    private static final int FAVORITE_COLUMNS = 5;
+    private final MutableLiveData<List<List<AppShortcutDTO>>> favoritesPagesLiveData = new MutableLiveData<>(new ArrayList<>());
 
     public HomeViewModel(@NonNull Application application,
                          GetShortcutsUseCase GetShortcutsUseCase,
@@ -41,7 +49,7 @@ public class HomeViewModel extends AndroidViewModel {
                          AddShortcutFirstUseCase AddShortcutFirstUseCase,
                          MoveShortcutUseCase MoveShortcutUseCase,
                          SetShortcutsUseCase SetShortcutsUseCase,
-                         RemoveShortcutUseCase RemoveShortcutUseCase) {
+                         RemoveShortcutUseCase RemoveShortcutUseCase, GetFavoritesUseCase getFavoritesUseCase, SetFavoritesUseCase setFavoritesUseCase) {
         super(application);
         this.GetShortcutsUseCase = GetShortcutsUseCase;
         this.AddShortcutUseCase = AddShortcutUseCase;
@@ -49,6 +57,8 @@ public class HomeViewModel extends AndroidViewModel {
         this.MoveShortcutUseCase = MoveShortcutUseCase;
         this.SetShortcutsUseCase = SetShortcutsUseCase;
         this.RemoveShortcutUseCase = RemoveShortcutUseCase;
+        this.getFavoritesUseCase = getFavoritesUseCase;
+        this.setFavoritesUseCase = setFavoritesUseCase;
     }
 
     public void changeMode(HomeScreenMode mode) {
@@ -180,5 +190,240 @@ public class HomeViewModel extends AndroidViewModel {
 
     public LiveData<Boolean> getIsMultiTouch() {
         return isMultiTouch;
+    }
+
+
+
+    // Метод загрузки избранного:
+//    public void loadFavorites() {
+//        executor.execute(() -> {
+//            List<List<AppShortcutDTO>> rawFavorites = getFavoritesUseCase.invoke();
+//            // Преобразуем List<List<AppShortcutDTO>> в плоский список (если у вас сетка избранного, но для простоты храним один ряд)
+//            List<AppShortcutDTO> flat = new ArrayList<>();
+//            for (List<AppShortcutDTO> row : rawFavorites) {
+//                flat.addAll(row);
+//            }
+//            favoritesLiveData.postValue(flat);
+//        });
+//    }
+
+    // Добавить в избранное (в конец первого свободного места)
+//    public void addToFavorites(AppShortcutDTO shortcut) {
+//        executor.execute(() -> {
+//            List<List<AppShortcutDTO>> raw = getFavoritesUseCase.invoke();
+//            // Ищем первую пустую ячейку
+//            boolean added = false;
+//            for (int i = 0; i < raw.size() && !added; i++) {
+//                for (int j = 0; j < raw.get(i).size(); j++) {
+//                    if (raw.get(i).get(j) == null) {
+//                        raw.get(i).set(j, shortcut);
+//                        added = true;
+//                        break;
+//                    }
+//                }
+//            }
+//            // Если все ячейки заняты, можно добавить новую строку (или проигнорировать)
+//            if (!added) {
+//                // Пример: создаём новую строку с размером 5 и кладём в неё
+//                List<AppShortcutDTO> newRow = new ArrayList<>();
+//                for (int k = 0; k < raw.get(0).size(); k++) newRow.add(null);
+//                newRow.set(0, shortcut);
+//                raw.add(newRow);
+//            }
+//            setFavoritesUseCase.invoke(raw);
+//            loadFavorites(); // перезагрузить
+//        });
+//    }
+
+    // Удалить из избранного
+    public void removeFromFavorites(AppShortcutDTO shortcut) {
+        executor.execute(() -> {
+            List<List<AppShortcutDTO>> raw = getFavoritesUseCase.invoke();
+            boolean removed = false;
+            for (List<AppShortcutDTO> row : raw) {
+                for (int i = 0; i < row.size(); i++) {
+                    if (shortcut.equals(row.get(i))) { // нужно переопределить equals в AppShortcutDTO по packageName
+                        row.set(i, null);
+                        removed = true;
+                        break;
+                    }
+                }
+                if (removed) break;
+            }
+            if (removed) {
+                setFavoritesUseCase.invoke(raw);
+                loadFavorites();
+            }
+        });
+    }
+
+    public LiveData<List<AppShortcutDTO>> getFavorites() {
+        return favoritesLiveData;
+    }
+
+    public void loadFavorites() {
+        executor.execute(() -> {
+            List<List<AppShortcutDTO>> rawFavorites = getFavoritesUseCase.invoke(); // изначально List<List<AppShortcutDTO>> (строки, колонки)
+            // Преобразуем в список страниц: каждая страница = плоский список из FAVORITE_COLUMNS элементов (может быть меньше на последней)
+            List<List<AppShortcutDTO>> pages = new ArrayList<>();
+            List<AppShortcutDTO> currentPage = new ArrayList<>();
+            for (List<AppShortcutDTO> row : rawFavorites) {
+                for (AppShortcutDTO item : row) {
+                    currentPage.add(item);
+                    if (currentPage.size() == FAVORITE_COLUMNS) {
+                        pages.add(new ArrayList<>(currentPage));
+                        currentPage.clear();
+                    }
+                }
+            }
+            if (!currentPage.isEmpty()) {
+                pages.add(currentPage);
+            }
+            favoritesPagesLiveData.postValue(pages);
+        });
+    }
+
+    // Добавление в избранное (в первую пустую ячейку)
+    public void addToFavorites(AppShortcutDTO shortcut) {
+        executor.execute(() -> {
+            List<List<AppShortcutDTO>> raw = getFavoritesUseCase.invoke();
+            boolean added = false;
+            for (int i = 0; i < raw.size(); i++) {
+                for (int j = 0; j < raw.get(i).size(); j++) {
+                    if (raw.get(i).get(j) == null) {
+                        raw.get(i).set(j, shortcut);
+                        added = true;
+                        break;
+                    }
+                }
+                if (added) break;
+            }
+            if (!added) {
+                // Добавить новую строку с null и поместить shortcut в первую ячейку
+                List<AppShortcutDTO> newRow = new ArrayList<>();
+                for (int i = 0; i < FAVORITE_COLUMNS; i++) newRow.add(null);
+                newRow.set(0, shortcut);
+                raw.add(newRow);
+            }
+            setFavoritesUseCase.invoke(raw);
+            loadFavorites();
+        });
+    }
+
+    // Удаление из избранного по позиции на странице
+    public void removeFromFavorites(int pageIndex, int positionInPage) {
+        executor.execute(() -> {
+            List<List<AppShortcutDTO>> pages = favoritesPagesLiveData.getValue();
+            if (pages == null || pageIndex >= pages.size()) return;
+            List<AppShortcutDTO> page = pages.get(pageIndex);
+            if (positionInPage >= page.size()) return;
+            AppShortcutDTO shortcutToRemove = page.get(positionInPage);
+            if (shortcutToRemove == null) return;
+
+            // Обновляем raw структуру
+            List<List<AppShortcutDTO>> raw = getFavoritesUseCase.invoke();
+            for (List<AppShortcutDTO> row : raw) {
+                for (int i = 0; i < row.size(); i++) {
+                    if (shortcutToRemove.equals(row.get(i))) {
+                        row.set(i, null);
+                        break;
+                    }
+                }
+            }
+            setFavoritesUseCase.invoke(raw);
+            loadFavorites();
+        });
+    }
+
+    public LiveData<List<List<AppShortcutDTO>>> getFavoritesPages() {
+        return favoritesPagesLiveData;
+    }
+
+    public void swapDesktopWithFavorites(int desktopPage, int desktopRow, int desktopCol,
+                                         int favPageIndex, int favPositionInPage) {
+        executor.execute(() -> {
+            // Глубокие копии текущих данных
+            List<List<List<AppShortcutDTO>>> desktopCopy = deepCopy(currentShortcuts);
+            List<List<AppShortcutDTO>> favPages = favoritesPagesLiveData.getValue();
+            if (favPages == null || favPageIndex >= favPages.size()) return;
+            List<List<AppShortcutDTO>> favCopy = new ArrayList<>();
+            for (List<AppShortcutDTO> page : favPages) {
+                favCopy.add(new ArrayList<>(page));
+            }
+
+            // Проверки границ
+            if (desktopPage < 0 || desktopPage >= desktopCopy.size()) return;
+            List<List<AppShortcutDTO>> desktopPageData = desktopCopy.get(desktopPage);
+            if (desktopRow < 0 || desktopRow >= desktopPageData.size()) return;
+            List<AppShortcutDTO> desktopRowData = desktopPageData.get(desktopRow);
+            if (desktopCol < 0 || desktopCol >= desktopRowData.size()) return;
+
+            List<AppShortcutDTO> favPageData = favCopy.get(favPageIndex);
+            if (favPositionInPage < 0 || favPositionInPage >= favPageData.size()) return;
+
+            AppShortcutDTO desktopItem = desktopRowData.get(desktopCol);
+            AppShortcutDTO favItem = favPageData.get(favPositionInPage);
+
+            // Меняем местами
+            desktopRowData.set(desktopCol, favItem);
+            favPageData.set(favPositionInPage, desktopItem);
+
+            // Обновляем LiveData
+            currentShortcuts.clear();
+            currentShortcuts.addAll(desktopCopy);
+            favoritesPagesLiveData.postValue(favCopy);
+
+            // Уведомляем UI
+            state.postValue(new HomeScreenState.Content(desktopCopy, mode.getValue()));
+
+            // Сохраняем на диск
+            scheduleSave(desktopCopy);
+            // Также нужно сохранить избранное (преобразовать обратно в raw структуру)
+            List<List<AppShortcutDTO>> rawFav = new ArrayList<>();
+            for (List<AppShortcutDTO> page : favCopy) {
+                // Разбиваем плоский список обратно на строки по 5 элементов
+                for (int i = 0; i < page.size(); i += FAVORITE_COLUMNS) {
+                    int end = Math.min(i + FAVORITE_COLUMNS, page.size());
+                    rawFav.add(new ArrayList<>(page.subList(i, end)));
+                }
+            }
+            setFavoritesUseCase.invoke(rawFav);
+        });
+    }
+
+    public void swapFavorites(int srcPage, int srcPos, int dstPage, int dstPos) {
+        executor.execute(() -> {
+            List<List<AppShortcutDTO>> pages = favoritesPagesLiveData.getValue();
+            if (pages == null) return;
+            // Создаём копию
+            List<List<AppShortcutDTO>> copy = new ArrayList<>();
+            for (List<AppShortcutDTO> page : pages) {
+                copy.add(new ArrayList<>(page));
+            }
+
+            // Проверки границ
+            if (srcPage < 0 || srcPage >= copy.size() || dstPage < 0 || dstPage >= copy.size()) return;
+            List<AppShortcutDTO> srcPageList = copy.get(srcPage);
+            List<AppShortcutDTO> dstPageList = copy.get(dstPage);
+            if (srcPos < 0 || srcPos >= srcPageList.size() || dstPos < 0 || dstPos >= dstPageList.size()) return;
+
+            // Меняем местами
+            AppShortcutDTO temp = srcPageList.get(srcPos);
+            srcPageList.set(srcPos, dstPageList.get(dstPos));
+            dstPageList.set(dstPos, temp);
+
+            // Обновляем LiveData
+            favoritesPagesLiveData.postValue(copy);
+
+            // Сохраняем на диск (преобразуем обратно в raw-структуру)
+            List<List<AppShortcutDTO>> rawFav = new ArrayList<>();
+            for (List<AppShortcutDTO> page : copy) {
+                for (int i = 0; i < page.size(); i += FAVORITE_COLUMNS) {
+                    int end = Math.min(i + FAVORITE_COLUMNS, page.size());
+                    rawFav.add(new ArrayList<>(page.subList(i, end)));
+                }
+            }
+            setFavoritesUseCase.invoke(rawFav);
+        });
     }
 }

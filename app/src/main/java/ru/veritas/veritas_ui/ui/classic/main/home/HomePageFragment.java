@@ -145,38 +145,60 @@ public class HomePageFragment extends Fragment {
                         String data = clipData.getItemAt(0).getText().toString();
                         String[] parts = data.split(":");
                         if (parts.length == 3) {
-                            int fromPage = Integer.parseInt(parts[0]);
-                            int fromRow = Integer.parseInt(parts[1]);
-                            int fromCol = Integer.parseInt(parts[2]);
+                            // Проверяем, пришли ли данные из избранного
+                            if ("favorites".equals(parts[0])) {
+                                // Источник: панель избранного
+                                int favPage = Integer.parseInt(parts[1]);
+                                int favPos = Integer.parseInt(parts[2]);
 
-                            float x = event.getX();
-                            float y = event.getY();
+                                // Определяем целевую ячейку рабочего стола
+                                View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+                                int targetPos = (child != null) ? recyclerView.getChildAdapterPosition(child) : RecyclerView.NO_POSITION;
+                                int targetRow, targetCol;
+                                if (targetPos != RecyclerView.NO_POSITION) {
+                                    targetRow = targetPos / columnCount;
+                                    targetCol = targetPos % columnCount;
+                                } else {
+                                    // запасной геометрический расчёт
+                                    int rvWidth = recyclerView.getWidth();
+                                    int rvHeight = recyclerView.getHeight();
+                                    if (rvWidth == 0 || rvHeight == 0) return true;
+                                    int cellWidth = rvWidth / columnCount;
+                                    int cellHeight = rvHeight / ROWS_PER_PAGE;
+                                    targetCol = Math.min((int) (event.getX() / cellWidth), columnCount - 1);
+                                    targetRow = Math.min((int) (event.getY() / cellHeight), ROWS_PER_PAGE - 1);
+                                }
+                                viewModel.swapDesktopWithFavorites(pageIndex, targetRow, targetCol, favPage, favPos);
 
-                            // 1. Попытаться найти виджет под пальцем (самый точный метод)
-                            View child = recyclerView.findChildViewUnder(x, y);
-                            int targetPos = (child != null) ? recyclerView.getChildAdapterPosition(child) : RecyclerView.NO_POSITION;
-                            int targetRow, targetCol;
-
-                            if (targetPos != RecyclerView.NO_POSITION) {
-                                targetRow = targetPos / columnCount;
-                                targetCol = targetPos % columnCount;
                             } else {
-                                // 2. Запасной геометрический расчёт, если recyclerView ещё не разложил элементы
-                                int rvWidth = recyclerView.getWidth();
-                                int rvHeight = recyclerView.getHeight();
-                                if (rvWidth == 0 || rvHeight == 0) return true;
-                                int cellWidth = rvWidth / columnCount;
-                                int cellHeight = rvHeight / ROWS_PER_PAGE;
-                                targetCol = Math.min((int) (x / cellWidth), columnCount - 1);
-                                targetRow = Math.min((int) (y / cellHeight), ROWS_PER_PAGE - 1);
-                            }
+                                // Обычное перемещение внутри рабочего стола
+                                int fromPage = Integer.parseInt(parts[0]);
+                                int fromRow = Integer.parseInt(parts[1]);
+                                int fromCol = Integer.parseInt(parts[2]);
 
-                            Log.d("DragDrop", String.format("%d %d %d -> %d %d %d",
-                                    fromPage, fromRow, fromCol, pageIndex, targetRow, targetCol));
-                            viewModel.moveShortcut(fromPage, fromRow, fromCol, pageIndex, targetRow, targetCol);
+                                View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+                                int targetPos = (child != null) ? recyclerView.getChildAdapterPosition(child) : RecyclerView.NO_POSITION;
+                                int targetRow, targetCol;
+                                if (targetPos != RecyclerView.NO_POSITION) {
+                                    targetRow = targetPos / columnCount;
+                                    targetCol = targetPos % columnCount;
+                                } else {
+                                    int rvWidth = recyclerView.getWidth();
+                                    int rvHeight = recyclerView.getHeight();
+                                    if (rvWidth == 0 || rvHeight == 0) return true;
+                                    int cellWidth = rvWidth / columnCount;
+                                    int cellHeight = rvHeight / ROWS_PER_PAGE;
+                                    targetCol = Math.min((int) (event.getX() / cellWidth), columnCount - 1);
+                                    targetRow = Math.min((int) (event.getY() / cellHeight), ROWS_PER_PAGE - 1);
+                                }
+                                Log.d("DragDrop", String.format("%d %d %d -> %d %d %d",
+                                        fromPage, fromRow, fromCol, pageIndex, targetRow, targetCol));
+                                viewModel.moveShortcut(fromPage, fromRow, fromCol, pageIndex, targetRow, targetCol);
+                            }
                         }
                     }
                     return true;
+
                 case DragEvent.ACTION_DRAG_ENDED:
                     clearHighlight();
                     clearDragged();

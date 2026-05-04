@@ -1,46 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scalableContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:fitsSystemWindows="true">
 
-    <ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer
-        android:id="@+id/scalableContainer"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fitsSystemWindows="true">
+        android:layout_height="match_parent"
+        android:layout_marginBottom="80dp" />
 
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/viewPager"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <View
-            android:id="@+id/leftEdgeIndicator"
-            android:layout_width="16dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="start"
-            android:background="#5D808080"
-            android:visibility="gone" />
-
-        <View
-            android:id="@+id/rightEdgeIndicator"
-            android:layout_width="16dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:background="#5D808080"
-            android:visibility="gone" />
-
-    </ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer>
-
-    <!-- Панель избранного -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/favoritesRecycler"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/favoritesViewPager"
         android:layout_width="match_parent"
         android:layout_height="80dp"
-        android:background="#1A000000"
-        android:padding="8dp"
-        android:clipToPadding="false" />
+        android:layout_gravity="bottom"
+        android:background="#1A000000" />
 
-</LinearLayout>
+    <View
+        android:id="@+id/leftEdgeIndicator"
+        android:layout_width="16dp"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="80dp"
+        android:layout_gravity="start"
+        android:background="@drawable/left_indicator_background"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/rightEdgeIndicator"
+        android:layout_width="16dp"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="80dp"
+        android:layout_gravity="end"
+        android:background="@drawable/right_indicator_background"
+        android:visibility="gone" />
+
+    <!-- Индикаторы избранного – точно по высоте панели -->
+    <View
+        android:id="@+id/leftFavIndicator"
+        android:layout_width="16dp"
+        android:layout_height="80dp"
+        android:layout_gravity="bottom|start"
+        android:background="@drawable/left_indicator_background"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/rightFavIndicator"
+        android:layout_width="16dp"
+        android:layout_height="80dp"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/right_indicator_background"
+        android:visibility="gone" />
+
+</ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer>

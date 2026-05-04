@@ -10,14 +10,19 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewpager2.widget.ViewPager2;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class ScalableContainer extends FrameLayout {
     private ScaleGestureDetector scaleGestureDetector;
-    private ViewPager2 viewPager;
+    private final List<ViewPager2> viewPagers = new ArrayList<>();
+    private final Map<ViewPager2, Boolean> originalUserInputState = new HashMap<>();
     private boolean isScaling = false;
     private OnScaleListener onScaleListener;
     private OnMultiTouchListener multiTouchListener;
     private int lastPointerCount = 0;
-    private boolean wasPageInputEnabled = true;
 
     public interface OnScaleListener {
         void onScale(float scaleFactor);
@@ -49,11 +54,15 @@ public class ScalableContainer extends FrameLayout {
                 return true;
             }
 
+            // ScalableContainer.java – исправленный onScaleBegin
             @Override
             public boolean onScaleBegin(@NonNull ScaleGestureDetector detector) {
                 isScaling = true;
-                if (viewPager != null) {
-                    viewPager.setUserInputEnabled(false);
+                for (ViewPager2 vp : viewPagers) {
+                    if (vp != null && !originalUserInputState.containsKey(vp)) {
+                        originalUserInputState.put(vp, vp.isUserInputEnabled());
+                        vp.setUserInputEnabled(false);
+                    }
                 }
                 if (onScaleListener != null) {
                     onScaleListener.onScaleBegin();
@@ -64,10 +73,7 @@ public class ScalableContainer extends FrameLayout {
             @Override
             public void onScaleEnd(@NonNull ScaleGestureDetector detector) {
                 isScaling = false;
-                if (viewPager != null) {
-                    // Восстанавливаем состояние прокрутки страниц с учётом мультитач
-                    updatePageInputEnabled();
-                }
+                updateAllPageInputEnabled();
                 if (onScaleListener != null) {
                     onScaleListener.onScaleEnd();
                 }
@@ -75,10 +81,30 @@ public class ScalableContainer extends FrameLayout {
         });
     }
 
-    public void setViewPager(ViewPager2 viewPager) {
-        this.viewPager = viewPager;
-        if (viewPager != null) {
-            wasPageInputEnabled = viewPager.isUserInputEnabled();
+    public void registerViewPager(ViewPager2 vp) {
+        if (vp != null && !viewPagers.contains(vp)) {
+            viewPagers.add(vp);
+            originalUserInputState.put(vp, vp.isUserInputEnabled());
+        }
+    }
+
+    public void unregisterViewPager(ViewPager2 vp) {
+        if (vp != null) {
+            viewPagers.remove(vp);
+            originalUserInputState.remove(vp);
+        }
+    }
+
+    private void updateAllPageInputEnabled() {
+        boolean multiTouch = lastPointerCount >= 2;
+        for (ViewPager2 vp : viewPagers) {
+            if (vp == null) continue;
+            Boolean savedState = originalUserInputState.get(vp);
+            if (multiTouch) {
+                vp.setUserInputEnabled(false);
+            } else {
+                vp.setUserInputEnabled(savedState != null ? savedState : true);
+            }
         }
     }
 
@@ -88,16 +114,6 @@ public class ScalableContainer extends FrameLayout {
 
     public void setOnMultiTouchListener(OnMultiTouchListener listener) {
         this.multiTouchListener = listener;
-    }
-
-    private void updatePageInputEnabled() {
-        if (viewPager == null) return;
-        boolean multiTouch = lastPointerCount >= 2;
-        if (multiTouch) {
-            viewPager.setUserInputEnabled(false);
-        } else {
-            viewPager.setUserInputEnabled(wasPageInputEnabled);
-        }
     }
 
     @Override
@@ -110,13 +126,14 @@ public class ScalableContainer extends FrameLayout {
             if (multiTouchListener != null) {
                 multiTouchListener.onMultiTouchChanged(multiTouch);
             }
-            // Отключаем прокрутку страниц при мультитач
-            if (viewPager != null) {
+            for (ViewPager2 vp : viewPagers) {
+                if (vp == null) continue;
                 if (multiTouch) {
-                    wasPageInputEnabled = viewPager.isUserInputEnabled();
-                    viewPager.setUserInputEnabled(false);
+                    originalUserInputState.put(vp, vp.isUserInputEnabled());
+                    vp.setUserInputEnabled(false);
                 } else {
-                    viewPager.setUserInputEnabled(wasPageInputEnabled);
+                    Boolean saved = originalUserInputState.get(vp);
+                    vp.setUserInputEnabled(saved != null ? saved : true);
                 }
             }
         }

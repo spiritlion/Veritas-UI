@@ -146,4 +146,49 @@ public class HomeRepositoryImpl implements HomeRepository {
             throw new RuntimeException(e);
         }
     }
+
+    public class FavoritesImpl implements HomeRepository.Favorites {
+        @Override
+        public List<List<AppShortcutDTO>> getFavorites() {
+            try (FileInputStream fileInputStream = context.openFileInput("favor_arh.json");
+                 InputStreamReader streamReader = new InputStreamReader(fileInputStream)) {
+                Gson gson = new Gson();
+                Type type = new TypeToken<List<List<AppShortcutDTO>>>(){}.getType();
+                return gson.fromJson(streamReader, type);
+            } catch (FileNotFoundException e) {
+                Log.e("get f", "Файл не найден, создаю новый");
+                createFavorites();
+                // После создания читаем заново
+                return getFavorites();
+            } catch (IOException ex) {
+                Log.e("get f", "Ошибка ввода-вывода", ex);
+                return new ArrayList<>(); // или брось RuntimeException
+            }
+        }
+
+        @Override
+        public void saveFavorites(List<List<AppShortcutDTO>> favorites) {
+            Gson gson = new Gson();
+            String data = gson.toJson(favorites);
+            Log.d("json", data);
+            try (FileOutputStream fileOutputStream = context.openFileOutput("favor_arh.json", Context.MODE_PRIVATE)) {
+                fileOutputStream.write(data.getBytes());
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private void createFavorites() {
+            List<List<AppShortcutDTO>> favorites = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                favorites.add(new ArrayList<>());
+                for (int j = 0; j < 5; j++) {
+                    favorites.get(i).add(new AppShortcutDTO(j + "", i + "" + j, null));
+                }
+            }
+            saveFavorites(favorites);
+        }
+    }
 }

@@ -14,4 +14,10 @@ public interface HomeRepository {
     boolean isShortcutExists(String packageName);
     AppShortcutDTO getShortcut(int i, int j, int k);
     void saveShortcuts(List<List<List<AppShortcutDTO>>> shortcuts);
+
+    interface Favorites {
+        List<List<AppShortcutDTO>> getFavorites();
+
+        void saveFavorites(List<List<AppShortcutDTO>> favorites);
+    }
 }
