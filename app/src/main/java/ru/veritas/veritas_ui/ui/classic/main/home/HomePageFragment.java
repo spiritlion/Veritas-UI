@@ -1,4 +1,6 @@
-package ru.veritas.veritas_ui.ui.classic.main.home;// HomePageFragment.java
+package ru.veritas.veritas_ui.ui.classic.main.home;
+
+import static java.lang.Math.abs;
 
 import android.content.ClipData;
 import android.os.Bundle;
@@ -29,6 +31,8 @@ public class HomePageFragment extends Fragment {
     private RecyclerView recyclerView;
     private AppAdapter adapter;
     private ViewPagerPagesAdapter.OnItemClickListener listener;
+    private float startX;
+    private float startY;
 
     public static HomePageFragment newInstance(List<AppShortcutDTO> appsList, int pageIndex, int columnCount) {
         HomePageFragment fragment = new HomePageFragment();
@@ -115,6 +119,11 @@ public class HomePageFragment extends Fragment {
         }
 
         adapter = new AppAdapter(appsList, requireContext(), listener, pageIndex, columnCount);
+        adapter.setDragDropListener((fromPage, fromRow, fromCol, targetPage, targetRow, targetCol) -> {
+            HomeViewModel viewModel = new ViewModelProvider(requireActivity())
+                    .get(HomeViewModel.class);
+            viewModel.moveShortcut(fromPage, fromRow, fromCol, targetPage, targetRow, targetCol);
+        });
         recyclerView.setAdapter(adapter);
     }
 }

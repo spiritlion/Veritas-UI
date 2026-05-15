@@ -1,7 +1,10 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;
 
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,13 +13,10 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
 
@@ -59,9 +59,12 @@ public class HomeScreenFragment extends Fragment  {
                             }
 
                             @Override
-                            public void onItemLongClick(int i, int j, int k) {
-                                viewModel.removeShortcut(i, j, k);
-                                Toast.makeText(requireContext(), "Ярлык удалён", Toast.LENGTH_SHORT).show();
+                            public void onItemLongClick(int page, int row, int col, View v) {
+                                viewModel.setDragSource(page, row, col);
+                                ClipData.Item item = new ClipData.Item(page + ":" + row + ":" + col);
+                                ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                                View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+                                v.startDragAndDrop(dragData, shadowBuilder, null, 0);
                             }
                         },
                         requireActivity(),

@@ -1,6 +1,7 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;// ViewPagerPagesAdapter.java
 
 import android.util.Log;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -22,7 +23,7 @@ public class ViewPagerPagesAdapter extends FragmentStateAdapter {
 
     public interface OnItemClickListener {
         void onItemClick(AppShortcutDTO shortcut);
-        void onItemLongClick(int i, int j, int k);
+        void onItemLongClick(int page, int row, int col, View v);
     }
 
     private OnItemClickListener onItemClickListener;

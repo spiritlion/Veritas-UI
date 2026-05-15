@@ -5,22 +5,19 @@ import android.graphics.drawable.Drawable;
 
 import androidx.annotation.Nullable;
 
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
-public class GetImageUseCase {
-    private final PackageManager packageManager;
+@FunctionalInterface
+public interface GetImageUseCase {
+    @Nullable Drawable invoke(AppShortcutDTO dto);
 
-    public GetImageUseCase(PackageManager packageManager) {
-        this.packageManager = packageManager;
-    }
-
-    @Nullable
-    public Drawable invoke(AppShortcutDTO dto) {
-        try {
-            return packageManager.getApplicationIcon(dto.getPackageName());
-        } catch (PackageManager.NameNotFoundException e) {
-            return null;
-        }
+    static GetImageUseCase create(PackageManager packageManager) {
+        return dto -> {
+            try {
+                return packageManager.getApplicationIcon(dto.getPackageName());
+            } catch (PackageManager.NameNotFoundException e) {
+                return null;
+            }
+        };
     }
 }

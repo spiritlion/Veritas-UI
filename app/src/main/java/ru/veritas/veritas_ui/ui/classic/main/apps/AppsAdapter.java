@@ -33,7 +33,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
 
     public AppsAdapter(OnItemClickListener listener, Context context) {
         this.listener = listener;
-        getImageUseCase = new GetImageUseCase(context.getPackageManager());
+        getImageUseCase = GetImageUseCase.create(context.getPackageManager());
     }
 
     @NonNull

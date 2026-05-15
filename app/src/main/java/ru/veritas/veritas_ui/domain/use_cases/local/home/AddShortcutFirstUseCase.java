@@ -4,10 +4,10 @@ import ru.veritas.veritas_ui.data.repositories.HomeRepository;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 @FunctionalInterface
-public interface AddShortcutUseCase {
-    void invoke(int page, int row, int col, AppShortcutDTO shortcut);
+public interface AddShortcutFirstUseCase {
+    void invoke(AppShortcutDTO shortcut);
 
-    static AddShortcutUseCase create(HomeRepository homeRepository) {
+    static AddShortcutFirstUseCase create(HomeRepository homeRepository) {
         return homeRepository::addShortcut;
     }
 }

@@ -1,10 +1,7 @@
 package ru.veritas.veritas_ui.data.repositories;
 
-import android.graphics.drawable.Drawable;
-
 import java.util.List;
 
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 public interface HomeRepository {
@@ -16,4 +13,11 @@ public interface HomeRepository {
     void removeShortcut(int i, int j, int k);
     boolean isShortcutExists(String packageName);
     AppShortcutDTO getShortcut(int i, int j, int k);
+    void saveShortcuts(List<List<List<AppShortcutDTO>>> shortcuts);
+
+    interface Favorites {
+        List<List<AppShortcutDTO>> getFavorites();
+
+        void saveFavorites(List<List<AppShortcutDTO>> favorites);
+    }
 }
