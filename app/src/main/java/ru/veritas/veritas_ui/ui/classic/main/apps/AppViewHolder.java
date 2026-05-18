@@ -2,6 +2,7 @@ package ru.veritas.veritas_ui.ui.classic.main.apps;
 
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -18,13 +19,13 @@ import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
  */
 public class AppViewHolder extends RecyclerView.ViewHolder {
 
-    private final MaterialCardView cardView;
+    private final LinearLayout cardView;
     private final ImageView icon;
     private final TextView name;
 
     public AppViewHolder(@NonNull View itemView) {
         super(itemView);
-        cardView = (MaterialCardView) itemView;
+        cardView = (LinearLayout) itemView;
         icon = itemView.findViewById(R.id.app_icon);
         name = itemView.findViewById(R.id.app_name);
     }

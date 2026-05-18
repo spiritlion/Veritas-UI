@@ -42,6 +42,18 @@ public class HomeViewModel extends AndroidViewModel {
     private static final int FAVORITE_COLUMNS = 5;
     private final MutableLiveData<List<List<AppShortcutDTO>>> favoritesPagesLiveData = new MutableLiveData<>(new ArrayList<>());
 
+    private final MutableLiveData<Integer> dragEdge = new MutableLiveData<>(0);
+    private final MutableLiveData<Boolean> isDragging = new MutableLiveData<>(false);
+
+    public LiveData<Boolean> isDragging() {
+        return isDragging;
+    }
+
+    public void setDragging(boolean dragging) {
+        isDragging.setValue(dragging);
+    }
+    public LiveData<Integer> getDragEdge() { return dragEdge; }
+    public void setDragEdge(int direction) { dragEdge.setValue(direction); }
     public HomeViewModel(@NonNull Application application,
                          GetShortcutsUseCase GetShortcutsUseCase,
                          AddShortcutUseCase AddShortcutUseCase,

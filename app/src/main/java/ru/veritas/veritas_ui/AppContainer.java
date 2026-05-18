@@ -19,7 +19,7 @@ public class AppContainer {
         this.context = context;
         dataSource = new PackageManagerDataSource(context);
         repository = new AppRepositoryImpl(dataSource);
-        getInstalledAppsUseCase = new GetInstalledAppsUseCase(repository);
-        launchAppUseCase = new LaunchAppUseCase(context);
+        getInstalledAppsUseCase = GetInstalledAppsUseCase.create(repository);
+        launchAppUseCase = LaunchAppUseCase.create(context);
     }
 }

@@ -14,50 +14,41 @@ import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
 import java.util.List;
 
 public class ViewPagerPagesAdapter extends FragmentStateAdapter {
-    private int columnCount = 4; // или передавайте извне
-
-    public ViewPagerPagesAdapter(OnItemClickListener listener, FragmentActivity fragmentActivity) {
-        super(fragmentActivity);
-        this.onItemClickListener = listener;
-    }
+    private int columnCount = 4;
+    private OnItemClickListener onItemClickListener;
+    private List<List<AppShortcutDTO>> pagesData;
 
     public interface OnItemClickListener {
         void onItemClick(AppShortcutDTO shortcut);
         void onItemLongClick(int page, int row, int col, View v);
     }
 
-    private OnItemClickListener onItemClickListener;
+    public ViewPagerPagesAdapter(OnItemClickListener listener,
+                                 @NonNull FragmentActivity fragmentActivity) {
+        super(fragmentActivity);
+        this.onItemClickListener = listener;
+    }
 
-    private List<List<AppShortcutDTO>> pagesData; // список страниц, каждая страница — список приложений
-
-    public ViewPagerPagesAdapter(OnItemClickListener onItemClickListener,
+    public ViewPagerPagesAdapter(OnItemClickListener listener,
                                  @NonNull FragmentActivity fragmentActivity,
                                  List<List<List<AppShortcutDTO>>> pagesData,
                                  int columnCount) {
         super(fragmentActivity);
-        this.onItemClickListener = onItemClickListener;
+        this.onItemClickListener = listener;
         this.columnCount = columnCount;
         this.pagesData = ToDoubleListUseCase.invoke(pagesData);
     }
 
-    public ViewPagerPagesAdapter(OnItemClickListener onItemClickListener, @NonNull FragmentActivity fragmentActivity,
-                                 List<List<List<AppShortcutDTO>>> pagesData) {
-        super(fragmentActivity);
-        this.onItemClickListener = onItemClickListener;
+    public void setPagesData(List<List<List<AppShortcutDTO>>> pagesData) {
         this.pagesData = ToDoubleListUseCase.invoke(pagesData);
+        notifyDataSetChanged(); // ← это было пропущено
     }
-
-    public void setPagesData( List<List<List<AppShortcutDTO>>> pagesData) {
-        Log.d("s p d", (pagesData == null) + "");
-        this.pagesData = ToDoubleListUseCase.invoke(pagesData); // TODO не отображается рабочий стол
-    }
-
 
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        List<AppShortcutDTO> appsList = pagesData.get(position);
-        HomePageFragment fragment = HomePageFragment.newInstance(appsList, position, columnCount);
+        // Только pageIndex и columnCount — данные фрагмент получит сам из ViewModel
+        HomePageFragment fragment = HomePageFragment.newInstance(position, columnCount);
         fragment.setOnItemClickListener(onItemClickListener);
         return fragment;
     }
