@@ -15,6 +15,10 @@ public class FavoritesViewPagerAdapter extends FragmentStateAdapter {
         super(fragmentActivity);
     }
 
+    public FavoritesViewPagerAdapter(@NonNull Fragment fragment) {
+        super(fragment);
+    }
+
     public void setPages(List<List<AppShortcutDTO>> pages) {
         this.pages = pages;
         notifyDataSetChanged();

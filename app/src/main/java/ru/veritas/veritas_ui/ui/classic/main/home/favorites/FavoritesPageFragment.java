@@ -17,6 +17,7 @@ import java.util.List;
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.ui.classic.main.home.AppAdapter;
+import ru.veritas.veritas_ui.ui.classic.main.home.HomeScreenFragment;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
 
 public class FavoritesPageFragment extends Fragment {
@@ -63,23 +64,37 @@ public class FavoritesPageFragment extends Fragment {
                 }
             }
         });
+
         recyclerView.setOnDragListener((v, event) -> {
             switch (event.getAction()) {
                 case DragEvent.ACTION_DRAG_STARTED:
-                    return true; // разрешаем принимать дроп
+                    return true;
                 case DragEvent.ACTION_DRAG_LOCATION: {
                     float x = event.getX();
                     float y = event.getY();
                     View child = recyclerView.findChildViewUnder(x, y);
                     highlightChild(child);
+
+                    // Вызываем метод родительского фрагмента для автоскролла
+                    Fragment parent = getParentFragment();
+                    if (parent instanceof HomeScreenFragment) {
+                        ((HomeScreenFragment) parent).onFavoritesDragLocation(x, y);
+                    }
                     return true;
                 }
                 case DragEvent.ACTION_DROP:
                     handleDrop(event);
                     return true;
                 case DragEvent.ACTION_DRAG_EXITED:
+                    clearHighlight();
+                    return true;
+
                 case DragEvent.ACTION_DRAG_ENDED:
                     clearHighlight();
+                    Fragment parent = getParentFragment();
+                    if (parent instanceof HomeScreenFragment) {
+                        ((HomeScreenFragment) parent).onFavoritesDragEnd();
+                    }
                     return true;
             }
             return false;
@@ -91,11 +106,7 @@ public class FavoritesPageFragment extends Fragment {
         if (clipData == null || clipData.getItemCount() == 0) return;
         String data = clipData.getItemAt(0).getText().toString();
         String[] parts = data.split(":");
-        if (parts.length != 3) return; // ожидаем данные с рабочего стола
-
-        int fromPage = Integer.parseInt(parts[0]);
-        int fromRow = Integer.parseInt(parts[1]);
-        int fromCol = Integer.parseInt(parts[2]);
+        if (parts.length != 2 && parts.length != 3) return;
 
         float x = event.getX();
         float y = event.getY();
@@ -106,7 +117,19 @@ public class FavoritesPageFragment extends Fragment {
 
         int pageIndex = getArguments().getInt(ARG_PAGE_INDEX, 0);
         HomeViewModel viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
-        viewModel.swapDesktopWithFavorites(fromPage, fromRow, fromCol, pageIndex, targetPos);
+
+        if (parts.length == 3) {
+            // Перемещение с рабочего стола в избранное
+            int fromPage = Integer.parseInt(parts[0]);
+            int fromRow = Integer.parseInt(parts[1]);
+            int fromCol = Integer.parseInt(parts[2]);
+            viewModel.swapDesktopWithFavorites(fromPage, fromRow, fromCol, pageIndex, targetPos);
+        } else if (parts.length == 2) {
+            // Перемещение внутри избранного
+            int srcPage = Integer.parseInt(parts[0]);
+            int srcPos = Integer.parseInt(parts[1]);
+            viewModel.swapFavorites(srcPage, srcPos, pageIndex, targetPos);
+        }
     }
 
     private void highlightChild(View child) {

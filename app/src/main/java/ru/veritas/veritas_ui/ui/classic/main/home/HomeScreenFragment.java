@@ -17,6 +17,7 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -77,10 +78,9 @@ public class HomeScreenFragment extends Fragment {
         favoritesViewPager = view.findViewById(R.id.favoritesViewPager);
         leftFavIndicator = view.findViewById(R.id.leftFavIndicator);
         rightFavIndicator = view.findViewById(R.id.rightFavIndicator);
-        favoritesAdapter = new FavoritesViewPagerAdapter(requireActivity());
+        favoritesAdapter = new FavoritesViewPagerAdapter(this);
         favoritesViewPager.setAdapter(favoritesAdapter);
-        favoritesViewPager.setOffscreenPageLimit(1);
-
+        favoritesViewPager.setOffscreenPageLimit(2);
 
         viewModel = new ViewModelProvider(requireActivity(),
                 new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
@@ -362,55 +362,20 @@ public class HomeScreenFragment extends Fragment {
                 case DragEvent.ACTION_DRAG_STARTED:
                     isFavDragging = true;
                     viewModel.setDragging(true);
+                    updateFavIndicators(favoritesViewPager.getCurrentItem());
                     return true;
-                case DragEvent.ACTION_DRAG_LOCATION: {
-                    // Автоскролл
-                    float x = event.getX();
-                    int width = favoritesViewPager.getWidth();
-                    int threshold = (int) (50 * getResources().getDisplayMetrics().density);
-                    int currentPage = favoritesViewPager.getCurrentItem();
-                    int totalPages = favoritesAdapter.getItemCount();
-                    if (x < threshold && currentPage > 0) {
-                        scheduleFavPageFlip(currentPage - 1);
-                    } else if (x > width - threshold && currentPage < totalPages - 1) {
-                        scheduleFavPageFlip(currentPage + 1);
-                    } else {
-                        cancelFavPageFlip();
-                    }
-                    return true;
-                }
-                case DragEvent.ACTION_DROP:
-                    // Не обрабатываем здесь, пусть идёт к дочерним View
-                    return false;
                 case DragEvent.ACTION_DRAG_ENDED:
-                case DragEvent.ACTION_DRAG_EXITED:
                     isFavDragging = false;
                     cancelFavPageFlip();
                     hideAllFavIndicators();
                     return true;
+                default: return false;
             }
-            return false;
         });
     }
 
     private Handler favHandler = new Handler();
     private Runnable favFlipRunnable;
-    private void scheduleFavPageFlip(int targetPage) {
-        if (favFlipRunnable != null) return;
-        favFlipRunnable = () -> {
-            favoritesViewPager.setCurrentItem(targetPage, true);
-            favFlipRunnable = null;
-        };
-        favHandler.postDelayed(favFlipRunnable, 300);
-        updateFavIndicators(targetPage);
-    }
-    private void cancelFavPageFlip() {
-        if (favFlipRunnable != null) {
-            favHandler.removeCallbacks(favFlipRunnable);
-            favFlipRunnable = null;
-        }
-        updateFavIndicators(favoritesViewPager.getCurrentItem());
-    }
     private void updateFavIndicators(int currentPage) {
         boolean hasLeft = currentPage > 0;
         boolean hasRight = currentPage < favoritesAdapter.getItemCount() - 1;
@@ -420,6 +385,54 @@ public class HomeScreenFragment extends Fragment {
     private void hideAllFavIndicators() {
         animateIndicatorVisibility(leftFavIndicator, false);
         animateIndicatorVisibility(rightFavIndicator, false);
+    }
+
+    // Публичные методы, вызываемые из дочернего FavoritesPageFragment
+    public void onFavoritesDragLocation(float x, float y) {
+        int width = favoritesViewPager.getWidth();
+        int threshold = (int) (50 * getResources().getDisplayMetrics().density);
+        int currentPage = favoritesViewPager.getCurrentItem();
+        int totalPages = favoritesAdapter.getItemCount();
+
+        Log.d("FavAutoScroll", "x=" + x + ", width=" + width + ", threshold=" + threshold + ", currentPage=" + currentPage + ", totalPages=" + totalPages);
+
+        if (x < threshold && currentPage > 0) {
+            scheduleFavPageFlip(currentPage - 1);
+        } else if (x > width - threshold && currentPage < totalPages - 1) {
+            scheduleFavPageFlip(currentPage + 1);
+        } else {
+            cancelFavPageFlip();
+        }
+    }
+
+    public void onFavoritesDragEnd() {
+        cancelFavPageFlip();
+        hideAllFavIndicators();
+    }
+
+    private int scheduledFavTargetPage = -1;
+
+
+    // Обновлённые методы для планирования перелистывания (можно оставить как есть)
+    private void scheduleFavPageFlip(int targetPage) {
+        if (scheduledFavTargetPage == targetPage) return;
+        cancelFavPageFlip();
+        scheduledFavTargetPage = targetPage;
+        favFlipRunnable = () -> {
+            favoritesViewPager.setCurrentItem(targetPage, true);
+            favFlipRunnable = null;
+            scheduledFavTargetPage = -1;
+            updateFavIndicators(targetPage);
+        };
+        favHandler.postDelayed(favFlipRunnable, 300);
+    }
+
+    private void cancelFavPageFlip() {
+        if (favFlipRunnable != null) {
+            favHandler.removeCallbacks(favFlipRunnable);
+            favFlipRunnable = null;
+            scheduledFavTargetPage = -1;
+        }
     }
 
     private void handleDropOnFavorites(DragEvent event) {
