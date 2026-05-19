@@ -144,28 +144,34 @@ public class HomePageFragment extends Fragment {
                 case DragEvent.ACTION_DROP: {
                     Log.d("page", "drop");
                     viewModel.setDragEdge(0);
-                    clearHighlight(); // на всякий случай сбросить подсветку перед обработкой дропа
+                    clearHighlight();
                     ClipData clipData = event.getClipData();
                     if (clipData != null && clipData.getItemCount() > 0) {
                         String data = clipData.getItemAt(0).getText().toString();
                         String[] parts = data.split(":");
+                        float x = event.getX();
+                        float y = event.getY();
+                        View child = recyclerView.findChildViewUnder(x, y);
+                        if (child == null) return false;
+                        int targetPos = recyclerView.getChildAdapterPosition(child);
+                        if (targetPos == RecyclerView.NO_POSITION) return false;
+                        int targetRow = targetPos / columnCount;
+                        int targetCol = targetPos % columnCount;
+
                         if (parts.length == 3) {
+                            // Перемещение внутри рабочего стола
                             int fromPage = Integer.parseInt(parts[0]);
                             int fromRow = Integer.parseInt(parts[1]);
                             int fromCol = Integer.parseInt(parts[2]);
-
-                            float x = event.getX();
-                            float y = event.getY();
-                            View child = recyclerView.findChildViewUnder(x, y);
-                            if (child != null) {
-                                int targetPos = recyclerView.getChildAdapterPosition(child);
-                                if (targetPos != RecyclerView.NO_POSITION) {
-                                    int targetRow = targetPos / columnCount;
-                                    int targetCol = targetPos % columnCount;
-                                    viewModel.moveShortcut(fromPage, fromRow, fromCol,
-                                            pageIndex, targetRow, targetCol);
-                                }
-                            }
+                            viewModel.moveShortcut(fromPage, fromRow, fromCol,
+                                    pageIndex, targetRow, targetCol);
+                        } else if (parts.length == 2) {
+                            // Перемещение из избранного на рабочий стол
+                            int fromFavPage = Integer.parseInt(parts[0]);
+                            int fromFavPos = Integer.parseInt(parts[1]);
+                            viewModel.swapDesktopWithFavorites(
+                                    pageIndex, targetRow, targetCol,
+                                    fromFavPage, fromFavPos);
                         }
                     }
                     return false;
@@ -181,7 +187,7 @@ public class HomePageFragment extends Fragment {
                 case DragEvent.ACTION_DRAG_EXITED:
                     Log.d("page","exited");
                     viewModel.setDragEdge(0);
-                    // viewModel.setDragging(false);   // ← закомментировать эту строку
+                    // viewModel.setDragging(false);
                     clearHighlight();
                     return true;
 

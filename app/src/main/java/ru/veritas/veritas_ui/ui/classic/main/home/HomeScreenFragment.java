@@ -27,6 +27,8 @@ import java.util.List;
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
+import ru.veritas.veritas_ui.ui.classic.main.home.favorites.FavoritesPageFragment;
+import ru.veritas.veritas_ui.ui.classic.main.home.favorites.FavoritesViewPagerAdapter;
 
 public class HomeScreenFragment extends Fragment {
 
@@ -49,6 +51,12 @@ public class HomeScreenFragment extends Fragment {
     // Для подсветки элемента в RecyclerView
     private View highlightedView = null;
 
+
+    private ViewPager2 favoritesViewPager;
+    private FavoritesViewPagerAdapter favoritesAdapter;
+    private View leftFavIndicator, rightFavIndicator;
+    private boolean isFavDragging = false;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -64,6 +72,15 @@ public class HomeScreenFragment extends Fragment {
         homeFragmentLayout = view.findViewById(R.id.home_fragment);
         leftEdgeIndicator = view.findViewById(R.id.leftEdgeIndicator);
         rightEdgeIndicator = view.findViewById(R.id.rightEdgeIndicator);
+
+
+        favoritesViewPager = view.findViewById(R.id.favoritesViewPager);
+        leftFavIndicator = view.findViewById(R.id.leftFavIndicator);
+        rightFavIndicator = view.findViewById(R.id.rightFavIndicator);
+        favoritesAdapter = new FavoritesViewPagerAdapter(requireActivity());
+        favoritesViewPager.setAdapter(favoritesAdapter);
+        favoritesViewPager.setOffscreenPageLimit(1);
+
 
         viewModel = new ViewModelProvider(requireActivity(),
                 new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
@@ -106,6 +123,23 @@ public class HomeScreenFragment extends Fragment {
         });
 
         setupDragAndDrop();
+
+
+        // Подписка на страницы избранного
+        viewModel.getFavoritesPages().observe(getViewLifecycleOwner(), pages -> {
+            if (pages != null && favoritesAdapter != null) {
+                favoritesAdapter.setPages(pages);
+                if (favoritesViewPager.getCurrentItem() >= pages.size()) {
+                    favoritesViewPager.setCurrentItem(pages.size() - 1);
+                }
+            }
+        });
+
+// Загрузка избранного при старте
+        viewModel.loadFavorites();
+
+// Настройка drag‑and‑drop для избранного
+        setupFavoritesDragAndDrop();
     }
 
     private void setupDragAndDrop() {
@@ -144,9 +178,25 @@ public class HomeScreenFragment extends Fragment {
 
                 case DragEvent.ACTION_DROP:
                     Log.d("screen", "drop");
+                    float dropX = event.getX();
+                    float dropY = event.getY();
+                    // Проверяем, не попал ли дроп на панель избранного
+                    int[] favLocation = new int[2];
+                    favoritesViewPager.getLocationOnScreen(favLocation);
+                    int[] parentLocation = new int[2];
+                    homeFragmentLayout.getLocationOnScreen(parentLocation);
+                    float relativeX = dropX + parentLocation[0] - favLocation[0];
+                    float relativeY = dropY + parentLocation[1] - favLocation[1];
+                    if (relativeX >= 0 && relativeX <= favoritesViewPager.getWidth() &&
+                            relativeY >= 0 && relativeY <= favoritesViewPager.getHeight()) {
+                        // Дроп на панели избранного – не обрабатываем здесь, пусть идёт дальше
+                        return false;
+                    }
+                    // Иначе обрабатываем дроп на рабочем столе
                     isDragging = false;
                     cancelPageFlip();
                     clearChildHighlight();
+                    handleDrop(event); // нужно реализовать
                     return true;
 
                 case DragEvent.ACTION_DRAG_ENDED:
@@ -302,6 +352,115 @@ public class HomeScreenFragment extends Fragment {
             handler.removeCallbacks(pageFlipRunnable);
             pageFlipRunnable = null;
             scheduledTargetPage = -1;
+        }
+    }
+
+
+    private void setupFavoritesDragAndDrop() {
+        favoritesViewPager.setOnDragListener((v, event) -> {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    isFavDragging = true;
+                    viewModel.setDragging(true);
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION: {
+                    // Автоскролл
+                    float x = event.getX();
+                    int width = favoritesViewPager.getWidth();
+                    int threshold = (int) (50 * getResources().getDisplayMetrics().density);
+                    int currentPage = favoritesViewPager.getCurrentItem();
+                    int totalPages = favoritesAdapter.getItemCount();
+                    if (x < threshold && currentPage > 0) {
+                        scheduleFavPageFlip(currentPage - 1);
+                    } else if (x > width - threshold && currentPage < totalPages - 1) {
+                        scheduleFavPageFlip(currentPage + 1);
+                    } else {
+                        cancelFavPageFlip();
+                    }
+                    return true;
+                }
+                case DragEvent.ACTION_DROP:
+                    // Не обрабатываем здесь, пусть идёт к дочерним View
+                    return false;
+                case DragEvent.ACTION_DRAG_ENDED:
+                case DragEvent.ACTION_DRAG_EXITED:
+                    isFavDragging = false;
+                    cancelFavPageFlip();
+                    hideAllFavIndicators();
+                    return true;
+            }
+            return false;
+        });
+    }
+
+    private Handler favHandler = new Handler();
+    private Runnable favFlipRunnable;
+    private void scheduleFavPageFlip(int targetPage) {
+        if (favFlipRunnable != null) return;
+        favFlipRunnable = () -> {
+            favoritesViewPager.setCurrentItem(targetPage, true);
+            favFlipRunnable = null;
+        };
+        favHandler.postDelayed(favFlipRunnable, 300);
+        updateFavIndicators(targetPage);
+    }
+    private void cancelFavPageFlip() {
+        if (favFlipRunnable != null) {
+            favHandler.removeCallbacks(favFlipRunnable);
+            favFlipRunnable = null;
+        }
+        updateFavIndicators(favoritesViewPager.getCurrentItem());
+    }
+    private void updateFavIndicators(int currentPage) {
+        boolean hasLeft = currentPage > 0;
+        boolean hasRight = currentPage < favoritesAdapter.getItemCount() - 1;
+        animateIndicatorVisibility(leftFavIndicator, hasLeft);
+        animateIndicatorVisibility(rightFavIndicator, hasRight);
+    }
+    private void hideAllFavIndicators() {
+        animateIndicatorVisibility(leftFavIndicator, false);
+        animateIndicatorVisibility(rightFavIndicator, false);
+    }
+
+    private void handleDropOnFavorites(DragEvent event) {
+        ClipData data = event.getClipData();
+        if (data == null) return;
+        String text = data.getItemAt(0).getText().toString();
+        String[] parts = text.split(":");
+
+        // Получаем текущий фрагмент избранного
+        int targetPage = favoritesViewPager.getCurrentItem();
+        Fragment currentFavFragment = getChildFragmentManager().findFragmentByTag("f" + targetPage);
+        if (!(currentFavFragment instanceof FavoritesPageFragment)) return;
+
+        RecyclerView rv = ((FavoritesPageFragment) currentFavFragment).getRecyclerView();
+        if (rv == null) return;
+
+        // Преобразуем координаты из favoritesViewPager в координаты RecyclerView
+        int[] favLocation = new int[2];
+        favoritesViewPager.getLocationOnScreen(favLocation);
+        int[] rvLocation = new int[2];
+        rv.getLocationOnScreen(rvLocation);
+        float rvX = event.getX() + favLocation[0] - rvLocation[0];
+        float rvY = event.getY() + favLocation[1] - rvLocation[1];
+
+        View targetView = rv.findChildViewUnder(rvX, rvY);
+        if (targetView == null) return;
+
+        int targetPos = rv.getChildAdapterPosition(targetView);
+        if (targetPos == RecyclerView.NO_POSITION) return;
+
+        if (parts.length == 2) {
+            // Перемещение внутри избранного
+            int fromPage = Integer.parseInt(parts[0]);
+            int fromPos = Integer.parseInt(parts[1]);
+            viewModel.swapFavorites(fromPage, fromPos, targetPage, targetPos);
+        } else if (parts.length == 3) {
+            // Перемещение с рабочего стола в избранное
+            int fromPage = Integer.parseInt(parts[0]);
+            int fromRow = Integer.parseInt(parts[1]);
+            int fromCol = Integer.parseInt(parts[2]);
+            viewModel.swapDesktopWithFavorites(fromPage, fromRow, fromCol, targetPage, targetPos);
         }
     }
 
