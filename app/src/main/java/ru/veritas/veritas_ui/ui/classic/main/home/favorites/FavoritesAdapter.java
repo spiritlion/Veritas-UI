@@ -12,15 +12,20 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.card.MaterialCardView;
+
 import java.util.List;
+
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
 import ru.veritas.veritas_ui.ui.classic.main.home.AppAdapter;
+import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
 
 public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.ViewHolder> {
     private List<AppShortcutDTO> items;
@@ -29,6 +34,7 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
     private GetImageUseCase getImageUseCase;
     private DragDropListener dragDropListener;
     private AppAdapter.DragEdgeListener dragEdgeListener;
+    private PopupMenu currentPopup;
 
     public interface DragDropListener {
         void onDrop(int fromPage, int fromPos, int targetPage, int targetPos);
@@ -72,7 +78,7 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
         holder.icon.setImageDrawable(getImageUseCase.invoke(item));
 
         holder.card.setOnTouchListener(new View.OnTouchListener() {
-            private Handler handler = new Handler(Looper.getMainLooper());
+            private final Handler handler = new Handler(Looper.getMainLooper());
             private Runnable longPressRunnable;
             private boolean dragLaunched = false;
             private boolean isLongPressTriggered = false;
@@ -97,10 +103,11 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
 
                         longPressRunnable = () -> {
                             isLongPressTriggered = true;
-                            // Здесь можно показать меню (если нужно), пока заглушка
-                            // showMenu(v, item, position);
+                            if (!dragLaunched) {
+                                showMenu(v, item, position);
+                            }
                         };
-                        handler.postDelayed(longPressRunnable, 500);
+                        handler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout());
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
@@ -113,14 +120,16 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                             if (!hasMoved) {
                                 hasMoved = true;
                                 handler.removeCallbacks(longPressRunnable);
-                                // Разрешаем родителю (RecyclerView) перехватывать скролл
                                 v.getParent().requestDisallowInterceptTouchEvent(false);
                             }
 
                             if (isLongPressTriggered) {
-                                // Долгое нажатие уже было – запускаем drag
                                 dragLaunched = true;
                                 handler.removeCallbacks(longPressRunnable);
+                                if (currentPopup != null) {
+                                    currentPopup.dismiss();
+                                    currentPopup = null;
+                                }
                                 startDrag(v, position);
                                 v.getParent().requestDisallowInterceptTouchEvent(false);
                             }
@@ -131,13 +140,8 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                     case MotionEvent.ACTION_CANCEL:
                         handler.removeCallbacks(longPressRunnable);
                         v.getParent().requestDisallowInterceptTouchEvent(false);
-
                         if (!dragLaunched && !isLongPressTriggered && !hasMoved) {
-                            // Короткий клик без движения
                             v.performClick();
-                        } else if (!dragLaunched && isLongPressTriggered && !hasMoved) {
-                            // Долгое нажатие без движения – можно показать меню
-                            // showMenu(v, item, position);
                         }
                         return true;
 
@@ -146,6 +150,35 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                 }
             }
         });
+    }
+
+    private void showMenu(View view, AppShortcutDTO app, int position) {
+        if (currentPopup != null) {
+            currentPopup.dismiss();
+        }
+        PopupMenu popup = new PopupMenu(view.getContext(), view);
+        popup.getMenuInflater().inflate(R.menu.popup_fav_menu, popup.getMenu());
+        popup.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.menu_item_remove_from_favorites) {
+                // Удаляем из избранного через ViewModel
+                if (view.getContext() instanceof androidx.fragment.app.FragmentActivity) {
+                    HomeViewModel viewModel = new ViewModelProvider((androidx.lifecycle.ViewModelStoreOwner) view.getContext())
+                            .get(HomeViewModel.class);
+                    viewModel.removeFromFavorites(pageIndex, position);
+                    Toast.makeText(view.getContext(), "Удалено из избранного", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            } else if (id == R.id.menu_item_about) {
+                // Информация о приложении
+                Toast.makeText(view.getContext(), "Информация о " + app.getAppName(), Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            return false;
+        });
+        popup.setOnDismissListener(menu -> currentPopup = null);
+        popup.show();
+        currentPopup = popup;
     }
 
     private void startDrag(View v, int position) {
@@ -160,11 +193,11 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        MaterialCardView card;
+        LinearLayout card;
         ImageView icon;
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            card = itemView.findViewById(R.id.fav_card);
+            card = itemView.findViewById(R.id.inside_fav);
             icon = itemView.findViewById(R.id.fav_icon);
         }
     }

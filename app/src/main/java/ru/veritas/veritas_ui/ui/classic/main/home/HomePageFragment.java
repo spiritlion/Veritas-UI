@@ -7,6 +7,7 @@ import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,6 +34,10 @@ public class HomePageFragment extends Fragment {
     private AppAdapter adapter;
     private ViewPagerPagesAdapter.OnItemClickListener listener;
     private View highlightedView = null;
+
+    private int computedItemHeight = 0;          // вычисленная высота ячейки
+    private boolean needsHeightRecalculation = true;
+    private ViewTreeObserver.OnGlobalLayoutListener layoutListener;
 
     public static HomePageFragment newInstance(int pageIndex, int columnCount) {
         HomePageFragment fragment = new HomePageFragment();
@@ -93,6 +98,57 @@ public class HomePageFragment extends Fragment {
         });
 
         setupDragListener(columnCount, pageIndex, viewModel);
+
+
+        // Слушатель изменения размера RecyclerView
+        layoutListener = () -> {
+            if (recyclerView.getHeight() > 0 && needsHeightRecalculation) {
+                adjustItemHeights();
+            }
+        };
+        recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
+
+        // Подписка на изменение данных (кол-во строк может измениться)
+        viewModel.getState().observe(getViewLifecycleOwner(), state -> {
+            if (state instanceof HomeScreenState.Content) {
+                // ... обновление данных адаптера (как было)
+                // После обновления данных требуется пересчёт высоты
+                needsHeightRecalculation = true;
+                recyclerView.post(() -> adjustItemHeights());
+            }
+        });
+    }
+
+    private void adjustItemHeights() {
+        if (adapter == null || recyclerView.getHeight() == 0) return;
+
+        int itemCount = adapter.getItemCount();
+        if (itemCount == 0) return;
+
+        int spanCount = ((GridLayoutManager) recyclerView.getLayoutManager()).getSpanCount();
+        int rowCount = (int) Math.ceil((double) itemCount / spanCount);
+        int availableHeight = recyclerView.getHeight() - recyclerView.getPaddingTop() - recyclerView.getPaddingBottom();
+
+        if (rowCount <= 0) return;
+        int newItemHeight = availableHeight / rowCount;
+
+        if (newItemHeight == computedItemHeight) return;
+        computedItemHeight = newItemHeight;
+
+        // Сообщаем адаптеру новую высоту ячейки
+        adapter.setItemHeight(computedItemHeight);
+
+        // Принудительно обновляем уже отрисованные дети
+        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+            View child = recyclerView.getChildAt(i);
+            ViewGroup.LayoutParams params = child.getLayoutParams();
+            if (params != null) {
+                params.height = computedItemHeight;
+                child.setLayoutParams(params);
+            }
+        }
+
+        needsHeightRecalculation = false;
     }
 
     /**
@@ -218,5 +274,13 @@ public class HomePageFragment extends Fragment {
 
     public RecyclerView getRecyclerView() {
         return this.recyclerView;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (recyclerView != null && layoutListener != null) {
+            recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(layoutListener);
+        }
     }
 }

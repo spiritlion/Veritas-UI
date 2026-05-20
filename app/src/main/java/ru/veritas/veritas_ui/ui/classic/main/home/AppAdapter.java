@@ -41,6 +41,16 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     private PopupMenu currentPopup;
     private DragDropListener dragDropListener;
 
+    private int itemHeight = RecyclerView.LayoutParams.WRAP_CONTENT;
+
+
+    public void setItemHeight(int height) {
+        if (this.itemHeight != height) {
+            this.itemHeight = height;
+            notifyDataSetChanged(); // перерисуем все ячейки с новой высотой
+        }
+    }
+
     // Callback для сообщения HomePageFragment о позиции drag у края экрана
     // direction: -1 — левый край, 0 — центр, +1 — правый край
     public interface DragEdgeListener {
@@ -236,6 +246,12 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
                 }
             }
         });
+
+        ViewGroup.LayoutParams params = holder.itemView.getLayoutParams();
+        if (params != null) {
+            params.height = itemHeight;
+            holder.itemView.setLayoutParams(params);
+        }
     }
 
     @Override
