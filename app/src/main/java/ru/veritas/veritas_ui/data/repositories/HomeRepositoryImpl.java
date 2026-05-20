@@ -147,7 +147,7 @@ public class HomeRepositoryImpl implements HomeRepository {
         }
     }
 
-    public class FavoritesImpl implements HomeRepository.Favorites {
+    public class FavoritesImpl implements Favorites {
         @Override
         public List<List<AppShortcutDTO>> getFavorites() {
             try (FileInputStream fileInputStream = context.openFileInput("favor_arh.json");
@@ -184,9 +184,6 @@ public class HomeRepositoryImpl implements HomeRepository {
             List<List<AppShortcutDTO>> favorites = new ArrayList<>();
             for (int i = 0; i < 3; i++) {
                 favorites.add(new ArrayList<>());
-                for (int j = 0; j < 5; j++) {
-                    favorites.get(i).add(new AppShortcutDTO(j + "", i + "" + j, null));
-                }
             }
             saveFavorites(favorites);
         }

@@ -6,9 +6,14 @@
     </style>
 
     <!-- Тема для домашнего экрана с обоями -->
-    <style name="Theme.HomeScreen" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.HomeScreen" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Настройки для обоев и прозрачности -->
         <item name="android:windowShowWallpaper">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+
+        <!-- Статус-бар и навбар настраиваются через атрибуты темы Material -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>

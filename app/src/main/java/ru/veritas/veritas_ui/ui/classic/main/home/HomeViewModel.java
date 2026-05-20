@@ -43,6 +43,18 @@ public class HomeViewModel extends AndroidViewModel {
     private static final int FAVORITE_COLUMNS = 5;
     private final MutableLiveData<List<List<AppShortcutDTO>>> favoritesPagesLiveData = new MutableLiveData<>(new ArrayList<>());
 
+    private final MutableLiveData<Integer> dragEdge = new MutableLiveData<>(0);
+    private final MutableLiveData<Boolean> isDragging = new MutableLiveData<>(false);
+
+    public LiveData<Boolean> isDragging() {
+        return isDragging;
+    }
+
+    public void setDragging(boolean dragging) {
+        isDragging.setValue(dragging);
+    }
+    public LiveData<Integer> getDragEdge() { return dragEdge; }
+    public void setDragEdge(int direction) { dragEdge.setValue(direction); }
     public HomeViewModel(@NonNull Application application,
                          GetShortcutsUseCase GetShortcutsUseCase,
                          AddShortcutUseCase AddShortcutUseCase,
@@ -61,10 +73,7 @@ public class HomeViewModel extends AndroidViewModel {
         this.setFavoritesUseCase = setFavoritesUseCase;
     }
 
-    public void changeMode(HomeScreenMode mode) {
-        this.mode.postValue(mode);
-    }
-    
+
     public void loadShortcuts() {
         state.postValue(HomeScreenState.Loading.INSTANCE);
         executor.execute(() -> {
@@ -72,7 +81,7 @@ public class HomeViewModel extends AndroidViewModel {
                 List<List<List<AppShortcutDTO>>> loaded = GetShortcutsUseCase.invoke();
                 currentShortcuts.clear();
                 currentShortcuts.addAll(loaded);
-                state.postValue(new HomeScreenState.Content(currentShortcuts, mode.getValue()));
+                state.postValue(new HomeScreenState.Content(currentShortcuts));
             } catch (Exception e) {
                 Log.e("Home Screen", "Ошибка загрузки рабочего стола" + e.getMessage());
                 state.postValue(new HomeScreenState.Error("Ошибка загрузки рабочего стола" + e.getMessage(), this::loadShortcuts, "Повторить попытку"));
@@ -84,6 +93,25 @@ public class HomeViewModel extends AndroidViewModel {
         executor.execute(() -> {
             AddShortcutFirstUseCase.invoke(shortcut);
             loadShortcuts(); // обновляем список
+        });
+    }
+
+    public void addShortcut(AppShortcutDTO app, int pageIndex, int row, int col) {
+        executor.execute(() -> {
+            AddShortcutUseCase
+                    .invoke(pageIndex, row, col, app);
+            loadShortcuts();
+        });
+    }
+
+
+    public void addToFavoritesAtPosition(AppShortcutDTO shortcut, int pageIndex, int positionInPage) {
+        executor.execute(() -> {
+            List<List<AppShortcutDTO>> currentPages = favoritesPagesLiveData.getValue();
+            assert currentPages != null;
+            currentPages.get(pageIndex).set(positionInPage, shortcut);
+            setFavoritesUseCase.invoke(currentPages);
+            loadFavorites();
         });
     }
 
@@ -108,7 +136,7 @@ public class HomeViewModel extends AndroidViewModel {
             currentShortcuts.addAll(updated);
 
             // Оповещение UI
-            state.postValue(new HomeScreenState.Content(updated, mode.getValue()));
+            state.postValue(new HomeScreenState.Content(updated));
             scheduleSave(updated);
         });
     }
@@ -164,7 +192,7 @@ public class HomeViewModel extends AndroidViewModel {
 
             currentShortcuts.clear();
             currentShortcuts.addAll(updated);
-            state.postValue(new HomeScreenState.Content(updated, mode.getValue()));
+            state.postValue(new HomeScreenState.Content(updated));
             scheduleSave(updated);
         });
     }
@@ -177,10 +205,6 @@ public class HomeViewModel extends AndroidViewModel {
 
     public LiveData<HomeScreenState> getState() {
         return state;
-    }
-
-    public MutableLiveData<HomeScreenMode> getMode() {
-        return mode;
     }
 
 
@@ -374,7 +398,7 @@ public class HomeViewModel extends AndroidViewModel {
             favoritesPagesLiveData.postValue(favCopy);
 
             // Уведомляем UI
-            state.postValue(new HomeScreenState.Content(desktopCopy, mode.getValue()));
+            state.postValue(new HomeScreenState.Content(desktopCopy));
 
             // Сохраняем на диск
             scheduleSave(desktopCopy);
@@ -426,4 +450,6 @@ public class HomeViewModel extends AndroidViewModel {
             setFavoritesUseCase.invoke(rawFav);
         });
     }
+
+
 }

@@ -7,6 +7,7 @@ import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,24 +20,28 @@ import java.util.List;
 
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
+
+import java.util.List;
 
 public class HomePageFragment extends Fragment {
     private static final String ARG_PAGE_INDEX = "page_index";
     private static final String ARG_COLUMN_COUNT = "column_count";
     private static final int ROWS_PER_PAGE = 6;   // <-- восстановлена
 
-    private View highlightedView = null; //       цель
-    private View draggedView = null;          // источник
+    // Порог края в dp — должен совпадать с AppAdapter
+    private static final int EDGE_THRESHOLD_DP = 64;
+
     private RecyclerView recyclerView;
     private AppAdapter adapter;
     private ViewPagerPagesAdapter.OnItemClickListener listener;
-    private HomeViewModel viewModel;
-    private int pageIndex;
-    private int columnCount;
+    private View highlightedView = null;
 
+    private int computedItemHeight = 0;          // вычисленная высота ячейки
+    private boolean needsHeightRecalculation = true;
+    private ViewTreeObserver.OnGlobalLayoutListener layoutListener;
 
-    // Новый фабричный метод – только индекс и количество колонок
     public static HomePageFragment newInstance(int pageIndex, int columnCount) {
         HomePageFragment fragment = new HomePageFragment();
         Bundle args = new Bundle();
@@ -66,58 +71,99 @@ public class HomePageFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerPage);
 
         Bundle args = getArguments();
-        if (args != null) {
-            pageIndex = args.getInt(ARG_PAGE_INDEX, 0);
-            columnCount = args.getInt(ARG_COLUMN_COUNT, 4);
-        } else {
-            pageIndex = 0;
-            columnCount = 4;
-        }
+        int pageIndex = args != null ? args.getInt(ARG_PAGE_INDEX, 0) : 0;
+        int columnCount = args != null ? args.getInt(ARG_COLUMN_COUNT, 4) : 4;
 
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), columnCount));
 
-        recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            int totalHeight = recyclerView.getHeight()
-                    - recyclerView.getPaddingTop()
-                    - recyclerView.getPaddingBottom();
-            if (totalHeight > 0) {
-                int itemHeight = totalHeight / ROWS_PER_PAGE; // 6 строк
-                adapter.setItemHeightPx(itemHeight);
-            }
-        });
+        HomeViewModel viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
 
-        // Адаптер изначально с пустыми данными
         adapter = new AppAdapter(null, requireContext(), listener, pageIndex, columnCount);
+
+        // Перемещение иконок между ячейками
+        adapter.setDragDropListener((fromPage, fromRow, fromCol, targetPage, targetRow, targetCol) ->
+                viewModel.moveShortcut(fromPage, fromRow, fromCol, targetPage, targetRow, targetCol));
+
+        // Передаём drag-позицию от ViewHolder вверх во ViewModel.
+        // ViewHolder получает DRAG_LOCATION, когда drag находится над конкретной карточкой.
+        adapter.setDragEdgeListener(direction -> viewModel.setDragEdge(direction));
+
         recyclerView.setAdapter(adapter);
 
-        // Подписываемся на ViewModel
-        viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
             if (state instanceof HomeScreenState.Content) {
                 List<List<List<AppShortcutDTO>>> allPages = ((HomeScreenState.Content) state).getApps();
-                List<List<AppShortcutDTO>> pages = ToDoubleListUseCase.invoke(allPages);
-                if (pageIndex < pages.size()) {
-                    adapter.updateData(pages.get(pageIndex));
-                } else {
-                    adapter.updateData(null); // страница удалена (редко)
+                List<List<AppShortcutDTO>> page = ToDoubleListUseCase.invoke(allPages);
+                if (pageIndex < page.size()) {
+                    adapter.updateData(page.get(pageIndex));
                 }
             }
         });
 
-        // Drag & Drop
+        setupDragListener(columnCount, pageIndex, viewModel);
+
+
+        // Слушатель изменения размера RecyclerView
+        layoutListener = () -> {
+            if (recyclerView.getHeight() > 0 && needsHeightRecalculation) {
+                adjustItemHeights();
+            }
+        };
+        recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
+
+        // Подписка на изменение данных (кол-во строк может измениться)
+        viewModel.getState().observe(getViewLifecycleOwner(), state -> {
+            if (state instanceof HomeScreenState.Content) {
+                // ... обновление данных адаптера (как было)
+                // После обновления данных требуется пересчёт высоты
+                needsHeightRecalculation = true;
+                recyclerView.post(() -> adjustItemHeights());
+            }
+        });
+    }
+
+    private void adjustItemHeights() {
+        if (adapter == null || recyclerView.getHeight() == 0) return;
+
+        int itemCount = adapter.getItemCount();
+        if (itemCount == 0) return;
+
+        int spanCount = ((GridLayoutManager) recyclerView.getLayoutManager()).getSpanCount();
+        int rowCount = (int) Math.ceil((double) itemCount / spanCount);
+        int availableHeight = recyclerView.getHeight() - recyclerView.getPaddingTop() - recyclerView.getPaddingBottom();
+
+        if (rowCount <= 0) return;
+        int newItemHeight = availableHeight / rowCount;
+
+        if (newItemHeight == computedItemHeight) return;
+        computedItemHeight = newItemHeight;
+
+        // Сообщаем адаптеру новую высоту ячейки
+        adapter.setItemHeight(computedItemHeight);
+
+        // Принудительно обновляем уже отрисованные дети
+        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+            View child = recyclerView.getChildAt(i);
+            ViewGroup.LayoutParams params = child.getLayoutParams();
+            if (params != null) {
+                params.height = computedItemHeight;
+                child.setLayoutParams(params);
+            }
+        }
+
+        needsHeightRecalculation = false;
+    }
+
+    /**
+     * RecyclerView получает DRAG_LOCATION, когда drag находится над пустым местом
+     * (там, где нет карточки). Карточки обрабатывают DRAG_LOCATION сами через ViewHolder.
+     */
+    private void setupDragListener(int columnCount, int pageIndex, HomeViewModel viewModel) {
         recyclerView.setOnDragListener((v, event) -> {
             switch (event.getAction()) {
                 case DragEvent.ACTION_DRAG_STARTED:
-                    clearDragged(); // сбросим предыдущий, если был
-                    int[] src = viewModel.getDragSource();
-                    if (src[0] == pageIndex) {
-                        int pos = src[1] * columnCount + src[2];
-                        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(pos);
-                        if (holder != null && holder.itemView != null) {
-                            draggedView = holder.itemView;
-                            draggedView.setBackgroundResource(R.drawable.highred_border); // красный полупрозрачный
-                        }
-                    }
+                    Log.d("page", "started");
+                    viewModel.setDragging(true);
                     return true;
 
                 case DragEvent.ACTION_DRAG_LOCATION: {
@@ -127,89 +173,101 @@ public class HomePageFragment extends Fragment {
                     if (child != null) {
                         if (highlightedView != child) {
                             clearHighlight();
+                            Log.d("page", "location");
                             child.setBackgroundResource(R.drawable.highlight_border);
                             highlightedView = child;
                         }
                     } else {
                         clearHighlight();
                     }
+
+                    int[] recyclerLocation = new int[2];
+                    recyclerView.getLocationOnScreen(recyclerLocation);
+
+                    float absX = recyclerLocation[0] + x;
+                    float screenWidth = getResources().getDisplayMetrics().widthPixels;
+                    float edgePx = EDGE_THRESHOLD_DP * getResources().getDisplayMetrics().density;
+
+                    int direction;
+                    if (absX < edgePx) {
+                        direction = -1;   // левый край
+                    } else if (absX > screenWidth - edgePx) {
+                        direction = 1;    // правый край
+                    } else {
+                        direction = 0;
+                    }
+                    viewModel.setDragEdge(direction);
                     return true;
                 }
 
-                case DragEvent.ACTION_DROP:
+
+                case DragEvent.ACTION_DROP: {
+                    Log.d("page", "drop");
+                    viewModel.setDragEdge(0);
                     clearHighlight();
-                    clearDragged();
-                    viewModel.clearDragSource();
                     ClipData clipData = event.getClipData();
                     if (clipData != null && clipData.getItemCount() > 0) {
                         String data = clipData.getItemAt(0).getText().toString();
                         String[] parts = data.split(":");
-                        if (parts.length == 3) {
-                            // Проверяем, пришли ли данные из избранного
-                            if ("favorites".equals(parts[0])) {
-                                // Источник: панель избранного
-                                int favPage = Integer.parseInt(parts[1]);
-                                int favPos = Integer.parseInt(parts[2]);
+                        float x = event.getX();
+                        float y = event.getY();
+                        View child = recyclerView.findChildViewUnder(x, y);
+                        if (child == null) return false;
+                        int targetPos = recyclerView.getChildAdapterPosition(child);
+                        if (targetPos == RecyclerView.NO_POSITION) return false;
+                        int targetRow = targetPos / columnCount;
+                        int targetCol = targetPos % columnCount;
+                        switch (parts[0]) {
+                            case "app": {
+                                String packageName = parts[1];
+                                String appTitle = parts[2];
+                                AppShortcutDTO shortcut = new AppShortcutDTO(packageName, appTitle, null);
 
-                                // Определяем целевую ячейку рабочего стола
-                                View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
-                                int targetPos = (child != null) ? recyclerView.getChildAdapterPosition(child) : RecyclerView.NO_POSITION;
-                                int targetRow, targetCol;
-                                if (targetPos != RecyclerView.NO_POSITION) {
-                                    targetRow = targetPos / columnCount;
-                                    targetCol = targetPos % columnCount;
-                                } else {
-                                    // запасной геометрический расчёт
-                                    int rvWidth = recyclerView.getWidth();
-                                    int rvHeight = recyclerView.getHeight();
-                                    if (rvWidth == 0 || rvHeight == 0) return true;
-                                    int cellWidth = rvWidth / columnCount;
-                                    int cellHeight = rvHeight / ROWS_PER_PAGE;
-                                    targetCol = Math.min((int) (event.getX() / cellWidth), columnCount - 1);
-                                    targetRow = Math.min((int) (event.getY() / cellHeight), ROWS_PER_PAGE - 1);
-                                }
-                                viewModel.swapDesktopWithFavorites(pageIndex, targetRow, targetCol, favPage, favPos);
+                                viewModel.addShortcut(shortcut, pageIndex, targetRow, targetCol);
+                                return true;
+                            }
 
-                            } else {
-                                // Обычное перемещение внутри рабочего стола
-                                int fromPage = Integer.parseInt(parts[0]);
-                                int fromRow = Integer.parseInt(parts[1]);
-                                int fromCol = Integer.parseInt(parts[2]);
+                            case "home": {
+                                int fromPage = Integer.parseInt(parts[1]);
+                                int fromRow = Integer.parseInt(parts[2]);
+                                int fromCol = Integer.parseInt(parts[3]);
 
-                                View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
-                                int targetPos = (child != null) ? recyclerView.getChildAdapterPosition(child) : RecyclerView.NO_POSITION;
-                                int targetRow, targetCol;
-                                if (targetPos != RecyclerView.NO_POSITION) {
-                                    targetRow = targetPos / columnCount;
-                                    targetCol = targetPos % columnCount;
-                                } else {
-                                    int rvWidth = recyclerView.getWidth();
-                                    int rvHeight = recyclerView.getHeight();
-                                    if (rvWidth == 0 || rvHeight == 0) return true;
-                                    int cellWidth = rvWidth / columnCount;
-                                    int cellHeight = rvHeight / ROWS_PER_PAGE;
-                                    targetCol = Math.min((int) (event.getX() / cellWidth), columnCount - 1);
-                                    targetRow = Math.min((int) (event.getY() / cellHeight), ROWS_PER_PAGE - 1);
-                                }
-                                Log.d("DragDrop", String.format("%d %d %d -> %d %d %d",
-                                        fromPage, fromRow, fromCol, pageIndex, targetRow, targetCol));
                                 viewModel.moveShortcut(fromPage, fromRow, fromCol, pageIndex, targetRow, targetCol);
+                                return true;
+                            }
+
+                            case "fav": {
+                                // Перемещение из избранного на рабочий стол
+                                int fromFavPage = Integer.parseInt(parts[1]);
+                                int fromFavPos = Integer.parseInt(parts[2]);
+
+                                viewModel.swapDesktopWithFavorites(pageIndex, targetRow, targetCol, fromFavPage, fromFavPos);
+                                return true;
                             }
                         }
                     }
-                    return true;
+                    return false;
+                }
 
                 case DragEvent.ACTION_DRAG_ENDED:
+                    Log.d("page","ended");
+                    viewModel.setDragEdge(0);
+                    viewModel.setDragging(false);
                     clearHighlight();
-                    clearDragged();
-                    viewModel.clearDragSource();
                     return true;
+
+                case DragEvent.ACTION_DRAG_EXITED:
+                    Log.d("page","exited");
+                    viewModel.setDragEdge(0);
+                    // viewModel.setDragging(false);
+                    clearHighlight();
+                    return true;
+
                 default:
                     return false;
             }
         });
     }
-
     private void clearHighlight() {
         if (highlightedView != null) {
             highlightedView.setBackground(null);
@@ -217,10 +275,15 @@ public class HomePageFragment extends Fragment {
         }
     }
 
-    private void clearDragged() {
-        if (draggedView != null) {
-            draggedView.setBackground(null);
-            draggedView = null;
+    public RecyclerView getRecyclerView() {
+        return this.recyclerView;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (recyclerView != null && layoutListener != null) {
+            recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(layoutListener);
         }
     }
 }

@@ -1,5 +1,6 @@
 package ru.veritas.veritas_ui.ui.classic.main.home;// ViewPagerPagesAdapter.java
 
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -10,28 +11,39 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 
 public class ViewPagerPagesAdapter extends FragmentStateAdapter {
-    private final int columnCount;
-    private final OnItemClickListener onItemClickListener;
-    private int pageCount = 0;
+    private int columnCount = 4;
+    private OnItemClickListener onItemClickListener;
+    private List<List<AppShortcutDTO>> pagesData;
+
+    public interface OnItemClickListener {
+        void onItemClick(AppShortcutDTO shortcut);
+        void onItemLongClick(int page, int row, int col, View v);
+    }
 
     public ViewPagerPagesAdapter(OnItemClickListener listener,
-                                 @NonNull FragmentActivity activity,
+                                 @NonNull FragmentActivity fragmentActivity) {
+        super(fragmentActivity);
+        this.onItemClickListener = listener;
+    }
+
+    public ViewPagerPagesAdapter(OnItemClickListener listener,
+                                 @NonNull FragmentActivity fragmentActivity,
+                                 List<List<List<AppShortcutDTO>>> pagesData,
                                  int columnCount) {
-        super(activity);
+        super(fragmentActivity);
         this.onItemClickListener = listener;
         this.columnCount = columnCount;
     }
 
-    public void setPageCount(int newCount) {
-        if (this.pageCount != newCount) {
-            this.pageCount = newCount;
-            notifyDataSetChanged();
-        }
+    public void setPagesData(List<List<List<AppShortcutDTO>>> pagesData) {
+        this.pagesData = ToDoubleListUseCase.invoke(pagesData);
+        notifyDataSetChanged(); // ← это было пропущено
     }
 
     @NonNull
     @Override
     public Fragment createFragment(int position) {
+        // Только pageIndex и columnCount — данные фрагмент получит сам из ViewModel
         HomePageFragment fragment = HomePageFragment.newInstance(position, columnCount);
         fragment.setOnItemClickListener(onItemClickListener);
         return fragment;

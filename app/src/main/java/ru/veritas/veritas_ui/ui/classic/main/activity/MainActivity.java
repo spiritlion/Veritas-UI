@@ -86,13 +86,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void animateDimOverlay(int page) {
-        // page 0 – домашний экран (обои видны), иначе экран приложений
-        float targetAlpha = (page == 0) ? 0f : 1f;
-        dimOverlay.animate()
-                .alpha(targetAlpha)
-                .setDuration(300)
-                .start();
+    public ViewPager2 getViewPager() {
+        return viewPager;
     }
-
 }
