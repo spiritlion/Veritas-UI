@@ -3,10 +3,13 @@ package ru.veritas.veritas_ui.ui.classic.main.home.favorites;
 import android.content.ClipData;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -106,29 +109,38 @@ public class FavoritesPageFragment extends Fragment {
         if (clipData == null || clipData.getItemCount() == 0) return;
         String data = clipData.getItemAt(0).getText().toString();
         String[] parts = data.split(":");
-        if (parts.length != 2 && parts.length != 3) return;
 
+        int pageIndex = getArguments().getInt(ARG_PAGE_INDEX, 0);
+        HomeViewModel viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
         float x = event.getX();
         float y = event.getY();
         View child = recyclerView.findChildViewUnder(x, y);
         if (child == null) return;
         int targetPos = recyclerView.getChildAdapterPosition(child);
         if (targetPos == RecyclerView.NO_POSITION) return;
+        switch (parts[0]) {
+            case "app": {
+                String packageName = parts[1];
+                String appTitle = parts[2];
+                AppShortcutDTO shortcut = new AppShortcutDTO(packageName, appTitle, null);
+                viewModel.addToFavoritesAtPosition(shortcut, pageIndex, targetPos);
+                return;
+            }
 
-        int pageIndex = getArguments().getInt(ARG_PAGE_INDEX, 0);
-        HomeViewModel viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
+            case "home": {
+                int fromPage = Integer.parseInt(parts[1]);
+                int fromRow = Integer.parseInt(parts[2]);
+                int fromCol = Integer.parseInt(parts[3]);
+                viewModel.swapDesktopWithFavorites(fromPage, fromRow, fromCol, pageIndex, targetPos);
+                return;
+            }
 
-        if (parts.length == 3) {
-            // Перемещение с рабочего стола в избранное
-            int fromPage = Integer.parseInt(parts[0]);
-            int fromRow = Integer.parseInt(parts[1]);
-            int fromCol = Integer.parseInt(parts[2]);
-            viewModel.swapDesktopWithFavorites(fromPage, fromRow, fromCol, pageIndex, targetPos);
-        } else if (parts.length == 2) {
-            // Перемещение внутри избранного
-            int srcPage = Integer.parseInt(parts[0]);
-            int srcPos = Integer.parseInt(parts[1]);
-            viewModel.swapFavorites(srcPage, srcPos, pageIndex, targetPos);
+            case "fav": {
+                int srcPage = Integer.parseInt(parts[1]);
+                int srcPos = Integer.parseInt(parts[2]);
+                viewModel.swapFavorites(srcPage, srcPos, pageIndex, targetPos);
+                return;
+            }
         }
     }
 

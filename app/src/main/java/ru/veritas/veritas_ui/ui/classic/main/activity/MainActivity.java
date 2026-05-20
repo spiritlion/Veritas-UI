@@ -48,4 +48,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public ViewPager2 getViewPager() {
+        return viewPager;
+    }
 }

@@ -1,5 +1,7 @@
 package ru.veritas.veritas_ui.ui.classic.main.apps;
 
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,16 +17,17 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.List;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.ui.classic.main.activity.MainActivity;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModelFactory;
 
-public class AppsScreenFragment extends Fragment  {
+public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStartListener  {
 
     private RecyclerView recyclerView;
     private AppsAdapter adapter;
@@ -77,6 +80,8 @@ public class AppsScreenFragment extends Fragment  {
         });
 
         viewModel.loadApps();
+
+
     }
 
     private void setupRecyclerView() {
@@ -86,7 +91,6 @@ public class AppsScreenFragment extends Fragment  {
                 viewModel.launchApp(app.getPackageName());
             }
 
-            @Override
             public void onItemLongClick(AppShortcutDTO app) {
                 // Добавляем на рабочий стол
                 HomeViewModel homeViewModel = new ViewModelProvider(requireActivity(),
@@ -97,6 +101,7 @@ public class AppsScreenFragment extends Fragment  {
         }, requireContext());
         recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 4));
         recyclerView.setAdapter(adapter);
+        adapter.setDragStartListener(this);
     }
 
     private void showError(String message, Runnable retryAction) {
@@ -111,5 +116,24 @@ public class AppsScreenFragment extends Fragment  {
         errorText.setVisibility(View.GONE);
         errorButton.setVisibility(View.GONE);
         errorButton.setOnClickListener(null);
+    }
+
+
+    @Override
+    public void onDragStart(AppShortcutDTO app, View view) {
+        // Переключаем ViewPager на рабочий стол (позиция 0)
+        if (getActivity() instanceof MainActivity) {
+            ViewPager2 viewPager = ((MainActivity) getActivity()).getViewPager();
+            if (viewPager != null && viewPager.getCurrentItem() != 0) {
+                viewPager.setCurrentItem(0, true);
+            }
+        }
+        // Запускаем drag через postDelayed, чтобы страница успела переключиться
+        view.postDelayed(() -> {
+            ClipData.Item item = new ClipData.Item("app:" + app.getPackageName() + ":" + app.getAppName());
+            ClipData dragData = new ClipData("app_shortcut",
+                    new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+            view.startDragAndDrop(dragData, new View.DragShadowBuilder(view), null, 0);
+        }, 100);
     }
 }

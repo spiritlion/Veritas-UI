@@ -75,6 +75,8 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
             private Handler handler = new Handler(Looper.getMainLooper());
             private Runnable longPressRunnable;
             private boolean dragLaunched = false;
+            private boolean isLongPressTriggered = false;
+            private boolean hasMoved = false;
             private float startX, startY;
             private float touchSlop;
 
@@ -83,36 +85,62 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                 if (touchSlop == 0) {
                     touchSlop = ViewConfiguration.get(v.getContext()).getScaledTouchSlop();
                 }
+
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         startX = event.getRawX();
                         startY = event.getRawY();
                         dragLaunched = false;
+                        isLongPressTriggered = false;
+                        hasMoved = false;
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+
                         longPressRunnable = () -> {
-                            if (!dragLaunched) {
-                                startDrag(v, position);
-                                dragLaunched = true;
-                            }
+                            isLongPressTriggered = true;
+                            // Здесь можно показать меню (если нужно), пока заглушка
+                            // showMenu(v, item, position);
                         };
                         handler.postDelayed(longPressRunnable, 500);
                         return true;
+
                     case MotionEvent.ACTION_MOVE:
                         if (dragLaunched) return true;
-                        float dx = Math.abs(event.getRawX() - startX);
-                        float dy = Math.abs(event.getRawY() - startY);
-                        if (dx > touchSlop || dy > touchSlop) {
-                            handler.removeCallbacks(longPressRunnable);
-                            startDrag(v, position);
-                            dragLaunched = true;
+
+                        float deltaX = Math.abs(event.getRawX() - startX);
+                        float deltaY = Math.abs(event.getRawY() - startY);
+
+                        if (deltaX > touchSlop || deltaY > touchSlop) {
+                            if (!hasMoved) {
+                                hasMoved = true;
+                                handler.removeCallbacks(longPressRunnable);
+                                // Разрешаем родителю (RecyclerView) перехватывать скролл
+                                v.getParent().requestDisallowInterceptTouchEvent(false);
+                            }
+
+                            if (isLongPressTriggered) {
+                                // Долгое нажатие уже было – запускаем drag
+                                dragLaunched = true;
+                                handler.removeCallbacks(longPressRunnable);
+                                startDrag(v, position);
+                                v.getParent().requestDisallowInterceptTouchEvent(false);
+                            }
                         }
                         return true;
+
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
                         handler.removeCallbacks(longPressRunnable);
-                        if (!dragLaunched) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+
+                        if (!dragLaunched && !isLongPressTriggered && !hasMoved) {
+                            // Короткий клик без движения
                             v.performClick();
+                        } else if (!dragLaunched && isLongPressTriggered && !hasMoved) {
+                            // Долгое нажатие без движения – можно показать меню
+                            // showMenu(v, item, position);
                         }
                         return true;
+
                     default:
                         return false;
                 }
@@ -121,7 +149,7 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
     }
 
     private void startDrag(View v, int position) {
-        ClipData.Item clipItem = new ClipData.Item(pageIndex + ":" + position);
+        ClipData.Item clipItem = new ClipData.Item("fav:" + pageIndex + ":" + position);
         ClipData dragData = new ClipData("favorites", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, clipItem);
         v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
     }

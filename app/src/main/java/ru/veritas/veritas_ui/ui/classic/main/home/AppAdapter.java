@@ -149,6 +149,8 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
             private Runnable longPressRunnable;
             private boolean isMenuShown = false;
             private boolean dragLaunched = false;
+            private boolean isLongPressTriggered = false;
+            private boolean hasMoved = false;          // ← новый флаг
             private float startX, startY;
             private float touchSlop;
 
@@ -164,9 +166,12 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
                         startY = event.getRawY();
                         isMenuShown = false;
                         dragLaunched = false;
+                        isLongPressTriggered = false;
+                        hasMoved = false;
                         v.getParent().requestDisallowInterceptTouchEvent(true);
 
                         longPressRunnable = () -> {
+                            isLongPressTriggered = true;
                             if (!dragLaunched) {
                                 showAppMenu(holder.app, app);
                                 isMenuShown = true;
@@ -177,23 +182,38 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
 
                     case MotionEvent.ACTION_MOVE:
                         if (dragLaunched) return true;
+
                         float deltaX = Math.abs(event.getRawX() - startX);
                         float deltaY = Math.abs(event.getRawY() - startY);
+
                         if (deltaX > touchSlop || deltaY > touchSlop) {
-                            dragLaunched = true;
-                            handler.removeCallbacks(longPressRunnable);
-                            if (isMenuShown && currentPopup != null) {
-                                currentPopup.dismiss();
-                                currentPopup = null;
-                                isMenuShown = false;
+                            if (!hasMoved) {
+                                hasMoved = true;
+                                // движение началось – отменяем long press
+                                handler.removeCallbacks(longPressRunnable);
+                                // разрешаем родителю (RecyclerView) перехватывать скролл
+                                v.getParent().requestDisallowInterceptTouchEvent(false);
                             }
-                            int row = position / columnCount;
-                            int col = position % columnCount;
-                            ClipData.Item item = new ClipData.Item(pageIndex + ":" + row + ":" + col);
-                            ClipData dragData = new ClipData("shortcuts",
-                                    new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
-                            v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
-                            v.getParent().requestDisallowInterceptTouchEvent(false);
+
+                            if (isLongPressTriggered) {
+                                // долгое нажатие уже было – запускаем drag
+                                dragLaunched = true;
+                                handler.removeCallbacks(longPressRunnable);
+
+                                if (isMenuShown && currentPopup != null) {
+                                    currentPopup.dismiss();
+                                    currentPopup = null;
+                                    isMenuShown = false;
+                                }
+
+                                int row = position / columnCount;
+                                int col = position % columnCount;
+                                ClipData.Item item = new ClipData.Item("home:" + pageIndex + ":" + row + ":" + col);
+                                ClipData dragData = new ClipData("shortcuts",
+                                        new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                                v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
+                                v.getParent().requestDisallowInterceptTouchEvent(false);
+                            }
                         }
                         return true;
 
@@ -201,7 +221,12 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
                     case MotionEvent.ACTION_CANCEL:
                         handler.removeCallbacks(longPressRunnable);
                         v.getParent().requestDisallowInterceptTouchEvent(false);
-                        if (!dragLaunched && !isMenuShown) {
+
+                        // КЛИК только если:
+                        // - не было драга
+                        // - не было долгого нажатия
+                        // - НЕ БЫЛО ДВИЖЕНИЯ (скролла)
+                        if (!dragLaunched && !isLongPressTriggered && !hasMoved) {
                             v.performClick();
                         }
                         return true;

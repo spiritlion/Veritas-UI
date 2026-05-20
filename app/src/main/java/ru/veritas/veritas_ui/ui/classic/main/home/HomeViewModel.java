@@ -95,6 +95,25 @@ public class HomeViewModel extends AndroidViewModel {
         });
     }
 
+    public void addShortcut(AppShortcutDTO app, int pageIndex, int row, int col) {
+        executor.execute(() -> {
+            AddShortcutUseCase
+                    .invoke(pageIndex, row, col, app);
+            loadShortcuts();
+        });
+    }
+
+
+    public void addToFavoritesAtPosition(AppShortcutDTO shortcut, int pageIndex, int positionInPage) {
+        executor.execute(() -> {
+            List<List<AppShortcutDTO>> currentPages = favoritesPagesLiveData.getValue();
+            assert currentPages != null;
+            currentPages.get(pageIndex).set(positionInPage, shortcut);
+            setFavoritesUseCase.invoke(currentPages);
+            loadFavorites();
+        });
+    }
+
     public void moveShortcut(int fromPage, int fromRow, int fromCol, int toPage, int toRow, int toCol) {
         // Проверки границ перед выполнением
         final List<List<List<AppShortcutDTO>>> snapshot = deepCopy(currentShortcuts);
@@ -430,4 +449,6 @@ public class HomeViewModel extends AndroidViewModel {
             setFavoritesUseCase.invoke(rawFav);
         });
     }
+
+
 }

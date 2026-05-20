@@ -35,9 +35,5 @@ public class AppViewHolder extends RecyclerView.ViewHolder {
         icon.setImageDrawable(getImageUseCase.invoke(app));
         name.setText(app.getAppName());
         cardView.setOnClickListener(v -> listener.onItemClick(app));
-        cardView.setOnLongClickListener(v -> {
-            listener.onItemLongClick(app);
-            return true;
-        });
     }
 }

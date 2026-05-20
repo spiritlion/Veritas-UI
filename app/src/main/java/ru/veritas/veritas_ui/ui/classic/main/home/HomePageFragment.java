@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
 
 import java.util.List;
@@ -157,21 +158,33 @@ public class HomePageFragment extends Fragment {
                         if (targetPos == RecyclerView.NO_POSITION) return false;
                         int targetRow = targetPos / columnCount;
                         int targetCol = targetPos % columnCount;
+                        switch (parts[0]) {
+                            case "app": {
+                                String packageName = parts[1];
+                                String appTitle = parts[2];
+                                AppShortcutDTO shortcut = new AppShortcutDTO(packageName, appTitle, null);
 
-                        if (parts.length == 3) {
-                            // Перемещение внутри рабочего стола
-                            int fromPage = Integer.parseInt(parts[0]);
-                            int fromRow = Integer.parseInt(parts[1]);
-                            int fromCol = Integer.parseInt(parts[2]);
-                            viewModel.moveShortcut(fromPage, fromRow, fromCol,
-                                    pageIndex, targetRow, targetCol);
-                        } else if (parts.length == 2) {
-                            // Перемещение из избранного на рабочий стол
-                            int fromFavPage = Integer.parseInt(parts[0]);
-                            int fromFavPos = Integer.parseInt(parts[1]);
-                            viewModel.swapDesktopWithFavorites(
-                                    pageIndex, targetRow, targetCol,
-                                    fromFavPage, fromFavPos);
+                                viewModel.addShortcut(shortcut, pageIndex, targetRow, targetCol);
+                                return true;
+                            }
+
+                            case "home": {
+                                int fromPage = Integer.parseInt(parts[1]);
+                                int fromRow = Integer.parseInt(parts[2]);
+                                int fromCol = Integer.parseInt(parts[3]);
+
+                                viewModel.moveShortcut(fromPage, fromRow, fromCol, pageIndex, targetRow, targetCol);
+                                return true;
+                            }
+
+                            case "fav": {
+                                // Перемещение из избранного на рабочий стол
+                                int fromFavPage = Integer.parseInt(parts[1]);
+                                int fromFavPos = Integer.parseInt(parts[2]);
+
+                                viewModel.swapDesktopWithFavorites(pageIndex, targetRow, targetCol, fromFavPage, fromFavPos);
+                                return true;
+                            }
                         }
                     }
                     return false;
