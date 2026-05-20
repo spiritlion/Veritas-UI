@@ -9,9 +9,6 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
-
-import java.util.List;
 
 public class ViewPagerPagesAdapter extends FragmentStateAdapter {
     private int columnCount = 4;
@@ -36,7 +33,6 @@ public class ViewPagerPagesAdapter extends FragmentStateAdapter {
         super(fragmentActivity);
         this.onItemClickListener = listener;
         this.columnCount = columnCount;
-        this.pagesData = ToDoubleListUseCase.invoke(pagesData);
     }
 
     public void setPagesData(List<List<List<AppShortcutDTO>>> pagesData) {
@@ -55,6 +51,11 @@ public class ViewPagerPagesAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return pagesData != null ? pagesData.size() : 0;
+        return pageCount;
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(AppShortcutDTO shortcut);
+        void onItemLongClick(int i, int j, int k, View v);
     }
 }

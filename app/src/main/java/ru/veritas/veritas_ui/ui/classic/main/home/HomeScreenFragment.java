@@ -35,6 +35,7 @@ public class HomeScreenFragment extends Fragment {
 
     private static final long PAGE_SWITCH_DELAY_MS = 600;
     private ViewPager2 viewPager;
+    private ScalableContainer scalableContainer;
     private ViewPagerPagesAdapter adapter;
     private HomeViewModel viewModel;
     private View leftEdgeIndicator;
@@ -132,6 +133,67 @@ public class HomeScreenFragment extends Fragment {
                 if (favoritesViewPager.getCurrentItem() >= pages.size()) {
                     favoritesViewPager.setCurrentItem(pages.size() - 1);
                 }
+                case DragEvent.ACTION_DROP:
+                case DragEvent.ACTION_DRAG_ENDED:
+                    isDragging = false;
+                    cancelPageFlip();
+                    cancelFavoritesPageFlip();
+                    hideAllEdgeIndicators();
+                    hideAllFavoriteIndicators();
+                    return true;
+
+            }
+            return false;
+        });
+
+
+        adapter = new ViewPagerPagesAdapter(
+                new ViewPagerPagesAdapter.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AppShortcutDTO shortcut) {
+                        if (viewModel.getMode().getValue() == HomeScreenMode.Edit) {
+                            Toast.makeText(requireContext(), "Режим редактирования: нажмите и удерживайте для перемещения", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        LaunchAppUseCase launchUseCase = LaunchAppUseCase.create(requireContext());
+                        launchUseCase.invoke(shortcut.getPackageName());
+                    }
+
+                    @Override
+                    public void onItemLongClick(int page, int row, int col, View v) {
+                        dragStartZone = "desktop";
+                        HomeScreenMode currentMode = viewModel.getMode().getValue();
+                        if (currentMode == HomeScreenMode.Base) {
+                            viewModel.removeShortcut(page, row, col);
+                            Toast.makeText(requireContext(), "Ярлык удалён", Toast.LENGTH_SHORT).show();
+                        } else if (currentMode == HomeScreenMode.Edit) {
+                            Log.d("DragDrop", String.format("%d %d %d",
+                                    page, row, col));
+                            // Начинаем drag & drop
+                            viewModel.setDragSource(page, row, col);
+                            ClipData.Item item = new ClipData.Item(page + ":" + row + ":" + col);
+                            ClipData dragData = new ClipData("shortcuts", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                            View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+                            v.startDragAndDrop(dragData, shadowBuilder, null, 0);
+                        }
+                    }
+                },
+                requireActivity(), 4);
+        viewPager.setAdapter(adapter);
+
+
+        // Остальной код без изменений (загрузка данных, адаптер и т.д.)
+        viewModel.loadShortcuts();
+        viewModel.getState().observe(getViewLifecycleOwner(), state -> {
+            if (state instanceof HomeScreenState.Loading) {
+                // TODO показать прогресс
+            } else if (state instanceof HomeScreenState.Content) {
+                // При каждом обновлении Content пересоздаём адаптер, чтобы отобразить актуальные данные
+                int pages = ((HomeScreenState.Content) state).getApps().size();
+                adapter.setPageCount(pages);
+                viewPager.setOffscreenPageLimit(Math.max(1, pages - 1));
+            } else if (state instanceof HomeScreenState.Error) {
+                // TODO обработка ошибки
             }
         });
 

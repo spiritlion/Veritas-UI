@@ -25,6 +25,7 @@ import ru.veritas.veritas_ui.domain.use_cases.local.home.SetShortcutsUseCase;
 
 public class HomeViewModel extends AndroidViewModel {
     private final MutableLiveData<HomeScreenState> state = new MutableLiveData<>();
+    private final MutableLiveData<HomeScreenMode> mode = new MutableLiveData<>(HomeScreenMode.Base);
     private final GetShortcutsUseCase GetShortcutsUseCase;
     private final AddShortcutUseCase AddShortcutUseCase;
     private final AddShortcutFirstUseCase AddShortcutFirstUseCase;

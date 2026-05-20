@@ -16,6 +16,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
+
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
@@ -26,6 +28,7 @@ import java.util.List;
 public class HomePageFragment extends Fragment {
     private static final String ARG_PAGE_INDEX = "page_index";
     private static final String ARG_COLUMN_COUNT = "column_count";
+    private static final int ROWS_PER_PAGE = 6;   // <-- восстановлена
 
     // Порог края в dp — должен совпадать с AppAdapter
     private static final int EDGE_THRESHOLD_DP = 64;
