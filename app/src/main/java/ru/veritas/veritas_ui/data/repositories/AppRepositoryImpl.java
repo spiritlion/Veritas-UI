@@ -1,11 +1,11 @@
 package ru.veritas.veritas_ui.data.repositories;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import ru.veritas.veritas_ui.data.dto.AppInfoDto;
 import ru.veritas.veritas_ui.data.source.local.PackageManagerDataSource;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class AppRepositoryImpl implements AppRepository {

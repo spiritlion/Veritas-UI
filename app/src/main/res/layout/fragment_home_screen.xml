@@ -53,46 +53,4 @@
         android:background="@drawable/right_indicator_background"
         android:visibility="gone" />
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/favoritesViewPager"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_gravity="bottom"
-        android:background="#1A000000" />
-
-    <View
-        android:id="@+id/leftEdgeIndicator"
-        android:layout_width="16dp"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="80dp"
-        android:layout_gravity="start"
-        android:background="@drawable/left_indicator_background"
-        android:visibility="gone" />
-
-    <View
-        android:id="@+id/rightEdgeIndicator"
-        android:layout_width="16dp"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="80dp"
-        android:layout_gravity="end"
-        android:background="@drawable/right_indicator_background"
-        android:visibility="gone" />
-
-    <!-- Индикаторы избранного – точно по высоте панели -->
-    <View
-        android:id="@+id/leftFavIndicator"
-        android:layout_width="16dp"
-        android:layout_height="80dp"
-        android:layout_gravity="bottom|start"
-        android:background="@drawable/left_indicator_background"
-        android:visibility="gone" />
-
-    <View
-        android:id="@+id/rightFavIndicator"
-        android:layout_width="16dp"
-        android:layout_height="80dp"
-        android:layout_gravity="bottom|end"
-        android:background="@drawable/right_indicator_background"
-        android:visibility="gone" />
-
-</ru.veritas.veritas_ui.ui.classic.main.home.view.ScalableContainer>
+</FrameLayout>

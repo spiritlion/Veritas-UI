@@ -13,19 +13,13 @@ public abstract class HomeScreenState {
 
     public static final class Content extends HomeScreenState {
         private final List<List<List<AppShortcutDTO>>> apps;
-        private final HomeScreenMode mode;
 
-        public Content(List<List<List<AppShortcutDTO>>> apps, HomeScreenMode mode) {
+        public Content(List<List<List<AppShortcutDTO>>> apps) {
             this.apps = apps;
-            this.mode = mode;
         }
 
         public List<List<List<AppShortcutDTO>>> getApps() {
             return apps;
-        }
-
-        public HomeScreenMode getMode() {
-            return mode;
         }
     }
 
