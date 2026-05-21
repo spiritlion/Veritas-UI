@@ -77,12 +77,13 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
                         isLongPressTriggered = false;
                         hasMoved = false;
                         dragStarted = false;
-                        // Разрешаем родителю перехватывать события (для скролла)
+                        // Не запрещаем перехват — оставляем родителю (RecyclerView) возможность
+                        // перехватить скролл. Это ключевое отличие от рабочего стола.
                         v.getParent().requestDisallowInterceptTouchEvent(false);
 
                         longPressRunnable = () -> {
                             isLongPressTriggered = true;
-                            // Запрещаем родителю перехватывать, чтобы при движении не начался скролл
+                            // После долгого нажатия запрещаем перехват, чтобы начать drag или показать меню
                             v.getParent().requestDisallowInterceptTouchEvent(true);
                             if (!dragStarted) {
                                 showMenu(v, dto);
@@ -100,17 +101,16 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
                         if (deltaX > touchSlop || deltaY > touchSlop) {
                             if (!hasMoved) {
                                 hasMoved = true;
-                                // Если движение началось до срабатывания long press – отменяем
-                                if (!isLongPressTriggered) {
-                                    handler.removeCallbacks(longPressRunnable);
-                                    v.getParent().requestDisallowInterceptTouchEvent(false);
-                                }
+                                // Движение началось — отменяем долгое нажатие
+                                handler.removeCallbacks(longPressRunnable);
+                                // Разрешаем RecyclerView перехватывать, если он ещё не перехватил
+                                v.getParent().requestDisallowInterceptTouchEvent(false);
                             }
 
                             if (isLongPressTriggered && !dragStarted) {
+                                // Долгое нажатие уже сработало, переходим к drag
                                 dragStarted = true;
                                 handler.removeCallbacks(longPressRunnable);
-                                // Закрываем меню, если показано
                                 if (currentPopup != null) {
                                     currentPopup.dismiss();
                                     currentPopup = null;
@@ -118,24 +118,31 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
                                 if (dragStartListener != null) {
                                     dragStartListener.onDragStart(dto, v);
                                 }
-                                // Запрещаем родителю перехватывать, чтобы драг работал
+                                // Запрещаем перехват, чтобы drag работал
                                 v.getParent().requestDisallowInterceptTouchEvent(true);
                             }
                         }
                         return true;
 
                     case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_CANCEL:
                         handler.removeCallbacks(longPressRunnable);
                         v.getParent().requestDisallowInterceptTouchEvent(false);
+                        // Клик только если не было драга, не сработало долгое нажатие и не было движения
                         if (!dragStarted && !isLongPressTriggered && !hasMoved) {
                             v.performClick();
                         }
                         return true;
 
-                    default:
-                        return false;
+                    case MotionEvent.ACTION_CANCEL:
+                        // Перехват произошёл (RecyclerView начал скролл) — сбрасываем всё и не вызываем клик
+                        handler.removeCallbacks(longPressRunnable);
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                        dragStarted = false;
+                        isLongPressTriggered = false;
+                        hasMoved = false;
+                        return true;
                 }
+                return false;
             }
         });
     }
