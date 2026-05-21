@@ -502,4 +502,7 @@ public class HomeScreenFragment extends Fragment {
         viewModel.setDragging(false);
         handler.removeCallbacksAndMessages(null);
     }
+
+    public void openAllApps() {
+    }
 }

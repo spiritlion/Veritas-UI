@@ -16,9 +16,12 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
+
 import java.util.List;
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.ui.classic.main.activity.MainActivity;
 import ru.veritas.veritas_ui.ui.classic.main.home.AppAdapter;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeScreenFragment;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
@@ -52,7 +55,9 @@ public class FavoritesPageFragment extends Fragment {
         recyclerView = view.findViewById(R.id.favoritesRecycler);
         int columnCount = getArguments().getInt(ARG_COLUMN_COUNT, 5);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), columnCount));
-        adapter = new FavoritesAdapter(getContext(), getArguments().getInt(ARG_PAGE_INDEX, 0), columnCount);
+        adapter = new FavoritesAdapter(requireActivity(), getContext(),
+                getArguments().getInt(ARG_PAGE_INDEX, 0),
+                columnCount);
         recyclerView.setAdapter(adapter);
 
         // Подписываемся на данные избранного
@@ -101,6 +106,15 @@ public class FavoritesPageFragment extends Fragment {
                     return true;
             }
             return false;
+        });
+
+        adapter.setSpecialIconClickListener(() -> {
+            if (getActivity() instanceof MainActivity) {
+                ViewPager2 viewPager = ((MainActivity) getActivity()).getViewPager();
+                if (viewPager != null) {
+                    viewPager.setCurrentItem(1, true);
+                }
+            }
         });
     }
 
