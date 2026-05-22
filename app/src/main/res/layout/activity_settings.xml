@@ -1,20 +1,245 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true"
+    android:background="#F5F5F5">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Настройки"
-        android:textSize="24sp"/>
+        android:padding="16dp">
 
-    <Button
-        android:id="@+id/buttonSave"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Сохранить"/>
+        <!-- Заголовок -->
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_text"
+            android:textColor="#1E1E1E"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-</LinearLayout>
+        <!-- Карточка: Количество строк -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/rowsCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@+id/titleText">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/rowsLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Строки"
+                    android:textColor="#3C3C3C"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/rowsValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5"
+                    android:textColor="#FF6200EE"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="@+id/rowsLabel"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/rowsLabel" />
+
+                <SeekBar
+                    android:id="@+id/rowsSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:max="10"
+                    android:progress="5"
+                    app:layout_constraintTop_toBottomOf="@+id/rowsLabel" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Карточка: Количество столбцов -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/columnsCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@+id/rowsCard">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/columnsLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Столбцы"
+                    android:textColor="#3C3C3C"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/columnsValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4"
+                    android:textColor="#FF6200EE"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="@+id/columnsLabel"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/columnsLabel" />
+
+                <SeekBar
+                    android:id="@+id/columnsSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:max="10"
+                    android:progress="4"
+                    app:layout_constraintTop_toBottomOf="@+id/columnsLabel" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Карточка: Количество страниц -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/pagesCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@+id/columnsCard">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/pagesLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Страницы"
+                    android:textColor="#3C3C3C"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/pagesValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3"
+                    android:textColor="#FF6200EE"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="@+id/pagesLabel"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/pagesLabel" />
+
+                <SeekBar
+                    android:id="@+id/pagesSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:max="10"
+                    android:progress="3"
+                    app:layout_constraintTop_toBottomOf="@+id/pagesLabel" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Карточка: Размер отступов -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/paddingCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@+id/pagesCard">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/paddingLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Отступы (dp)"
+                    android:textColor="#3C3C3C"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/paddingValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12"
+                    android:textColor="#FF6200EE"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="@+id/paddingLabel"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/paddingLabel" />
+
+                <SeekBar
+                    android:id="@+id/paddingSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:max="50"
+                    android:progress="12"
+                    app:layout_constraintTop_toBottomOf="@+id/paddingLabel" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Кнопка выбора обоев (обычный Button) -->
+        <Button
+            android:id="@+id/selectWallpaperButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/Swith_wallp_text"
+            android:textAllCaps="false"
+            app:layout_constraintTop_toBottomOf="@+id/paddingCard" />
+
+        <!-- Кнопка "Назад" (обычный Button) -->
+        <Button
+            android:id="@+id/button4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/back_text"
+            android:textAllCaps="false"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/selectWallpaperButton" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

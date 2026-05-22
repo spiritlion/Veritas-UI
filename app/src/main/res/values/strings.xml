@@ -4,4 +4,13 @@
     <string name="hello_blank_fragment" translatable="false">Hello blank fragment</string>
     <string name="apps">apps</string>
     <string name="settings">Настройки</string>
+    <string name="theme_swtich_text">Выбор Темы</string>
+    <string name="main_title">Настройки внешнего вида рабочего стола</string>
+    <string name="Setting_text">Настройки</string>
+    <string name="Desktop_text">Настройки рабочего стола</string>
+    <string name="themes_Text">Настройка тем лаунчера</string>
+    <string name="back_text">Назад</string>
+    <string name="Swith_wallp_text">Выбрать обои</string>
+    <string name="settings_text">Настройки</string>
+    <string name="back_back_text">Назад</string>
 </resources>
