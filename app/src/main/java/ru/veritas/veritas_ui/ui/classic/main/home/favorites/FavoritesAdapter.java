@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -26,6 +27,7 @@ import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetImageUseCase;
 import ru.veritas.veritas_ui.ui.classic.main.home.AppAdapter;
 import ru.veritas.veritas_ui.ui.classic.main.home.HomeViewModel;
+import ru.veritas.veritas_ui.ui.classic.settings.SettingsActivity;
 
 public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.ViewHolder> {
     private final Activity activity;
@@ -278,6 +280,10 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                 new RadialMenuView.Callback() {
                     @Override
                     public void onItemSelected(int index, String label) {
+                        if ("Настройки".equals(label)) {
+                            Intent intent = new Intent(activity, SettingsActivity.class); // activity – поле класса
+                            activity.startActivity(intent);
+                        }
                         Toast.makeText(activity, "Выбрано: " + label, Toast.LENGTH_SHORT).show();
                         removeRadialMenu();
                     }
