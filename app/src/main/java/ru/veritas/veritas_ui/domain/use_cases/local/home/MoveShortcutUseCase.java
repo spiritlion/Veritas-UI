@@ -1,19 +1,21 @@
 package ru.veritas.veritas_ui.domain.use_cases.local.home;
 
-import ru.veritas.veritas_ui.data.repositories.HomeRepository;
-import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
+import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 
-@FunctionalInterface
-public interface MoveShortcutUseCase {
-    void invoke(int fromPage, int fromRow, int fromCol,
-                int toPage, int toRow, int toCol);
+public class MoveShortcutUseCase {
+    private final HomeRepository repository;
 
-    static MoveShortcutUseCase create(HomeRepository repository) {
-        return (fromPage, fromRow, fromCol, toPage, toRow, toCol) -> {
-            AppShortcutDTO fromApp = repository.getShortcut(fromPage, fromRow, fromCol);
-            AppShortcutDTO toApp = repository.getShortcut(toPage, toRow, toCol);
-            repository.addShortcut(toPage, toRow, toCol, fromApp);
-            repository.addShortcut(fromPage, fromRow, fromCol, toApp);
-        };
+    public MoveShortcutUseCase(HomeRepository repository) {
+        this.repository = repository;
     }
+
+    public void invoke(int fromPage, int fromRow, int fromCol,
+                int toPage, int toRow, int toCol) {
+        AppShortcut fromApp = repository.getShortcut(fromPage, fromRow, fromCol);
+        AppShortcut toApp = repository.getShortcut(toPage, toRow, toCol);
+        repository.addShortcut(toPage, toRow, toCol, fromApp);
+        repository.addShortcut(fromPage, fromRow, fromCol, toApp);
+    }
+
 }

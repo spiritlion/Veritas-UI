@@ -2,15 +2,18 @@ package ru.veritas.veritas_ui.domain.use_cases.local.home;
 
 import java.util.List;
 
-import ru.veritas.veritas_ui.data.repositories.HomeRepository;
-import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
+import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 
-@FunctionalInterface
-public interface GetShortcutsUseCase {
 
-    List<List<List<AppShortcutDTO>>> invoke();
+public class GetShortcutsUseCase {
+    private final HomeRepository repository;
 
-    static GetShortcutsUseCase create(HomeRepository homeRepository) {
-        return homeRepository::getShortcuts;
+    public GetShortcutsUseCase(HomeRepository repository) {
+        this.repository = repository;
+    }
+
+    public List<List<List<AppShortcut>>> invoke() {
+        return repository.getShortcuts();
     }
 }

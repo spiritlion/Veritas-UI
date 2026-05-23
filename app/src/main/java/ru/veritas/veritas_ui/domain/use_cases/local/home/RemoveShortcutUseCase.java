@@ -1,12 +1,16 @@
 package ru.veritas.veritas_ui.domain.use_cases.local.home;
 
-import ru.veritas.veritas_ui.data.repositories.HomeRepository;
+import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
 
-@FunctionalInterface
-public interface RemoveShortcutUseCase {
-    void invoke(int page, int row, int col);
 
-    static RemoveShortcutUseCase create(HomeRepository homeRepository) {
-        return homeRepository::removeShortcut;
+public class RemoveShortcutUseCase {
+    private final HomeRepository repository;
+
+    public RemoveShortcutUseCase(HomeRepository repository) {
+        this.repository = repository;
+    }
+
+    public void invoke(int page, int row, int col) {
+        repository.removeShortcut(page,row,col);
     }
 }

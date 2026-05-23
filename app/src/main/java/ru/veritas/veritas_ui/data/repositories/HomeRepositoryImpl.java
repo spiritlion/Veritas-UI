@@ -15,7 +15,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.repositories.FavoritesRepository;
+import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
 
 public class HomeRepositoryImpl implements HomeRepository {
 
@@ -26,16 +28,15 @@ public class HomeRepositoryImpl implements HomeRepository {
     }
 
     @Override
-    public List<List<List<AppShortcutDTO>>> getShortcuts() {
+    public List<List<List<AppShortcut>>> getShortcuts() {
         try (FileInputStream fileInputStream = context.openFileInput("home_arh.json");
              InputStreamReader streamReader = new InputStreamReader(fileInputStream)) {
             Gson gson = new Gson();
-            Type type = new TypeToken<List<List<List<AppShortcutDTO>>>>(){}.getType();
+            Type type = new TypeToken<List<List<List<AppShortcut>>>>(){}.getType();
             return gson.fromJson(streamReader, type);
         } catch (FileNotFoundException e) {
             Log.e("get s", "Файл не найден, создаю новый");
             createShortcuts();
-            // После создания читаем заново
             return getShortcuts();
         } catch (IOException ex) {
             Log.e("get s", "Ошибка ввода-вывода", ex);
@@ -77,8 +78,8 @@ public class HomeRepositoryImpl implements HomeRepository {
 
 
     @Override
-    public void addShortcut(AppShortcutDTO shortcut) {
-        List<List<List<AppShortcutDTO>>> shortcuts = getShortcuts();
+    public void addShortcut(AppShortcut shortcut) {
+        List<List<List<AppShortcut>>> shortcuts = getShortcuts();
         for (int i = 0; i < shortcuts.size(); i++) {
             for (int j = 0; j < shortcuts.get(i).size(); j++) {
                 for (int k = 0; k < shortcuts.get(i).get(j).size(); k++) {
@@ -91,9 +92,9 @@ public class HomeRepositoryImpl implements HomeRepository {
         }
     }
     @Override
-    public void addShortcut(int i, int j, int k, AppShortcutDTO shortcut) {
+    public void addShortcut(int i, int j, int k, AppShortcut shortcut) {
         Log.d("add s", "1");
-        List<List<List<AppShortcutDTO>>> shortcuts = getShortcuts();
+        List<List<List<AppShortcut>>> shortcuts = getShortcuts();
         assert shortcuts != null;
         shortcuts.get(i).get(j).set(k, shortcut);
         saveShortcuts(shortcuts);
@@ -116,12 +117,12 @@ public class HomeRepositoryImpl implements HomeRepository {
     }
 
     @Override
-    public AppShortcutDTO getShortcut(int i, int j, int k) {
+    public AppShortcut getShortcut(int i, int j, int k) {
         return getShortcuts().get(i).get(j).get(k);
     }
 
     private void createShortcuts() {
-        List<List<List<AppShortcutDTO>>> shortcuts = new ArrayList<>();
+        List<List<List<AppShortcut>>> shortcuts = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             shortcuts.add(new ArrayList<>());
             for (int j = 0; j < 6; j++) {
@@ -134,7 +135,7 @@ public class HomeRepositoryImpl implements HomeRepository {
         saveShortcuts(shortcuts);
     }
 
-    public void saveShortcuts(List<List<List<AppShortcutDTO>>> shortcuts) {
+    public void saveShortcuts(List<List<List<AppShortcut>>> shortcuts) {
         Gson gson = new Gson();
         String data = gson.toJson(shortcuts);
         Log.d("json", data);
@@ -144,48 +145,6 @@ public class HomeRepositoryImpl implements HomeRepository {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public class FavoritesImpl implements Favorites {
-        @Override
-        public List<List<AppShortcutDTO>> getFavorites() {
-            try (FileInputStream fileInputStream = context.openFileInput("favor_arh.json");
-                 InputStreamReader streamReader = new InputStreamReader(fileInputStream)) {
-                Gson gson = new Gson();
-                Type type = new TypeToken<List<List<AppShortcutDTO>>>(){}.getType();
-                return gson.fromJson(streamReader, type);
-            } catch (FileNotFoundException e) {
-                Log.e("get f", "Файл не найден, создаю новый");
-                createFavorites();
-                // После создания читаем заново
-                return getFavorites();
-            } catch (IOException ex) {
-                Log.e("get f", "Ошибка ввода-вывода", ex);
-                return new ArrayList<>(); // или брось RuntimeException
-            }
-        }
-
-        @Override
-        public void saveFavorites(List<List<AppShortcutDTO>> favorites) {
-            Gson gson = new Gson();
-            String data = gson.toJson(favorites);
-            Log.d("json", data);
-            try (FileOutputStream fileOutputStream = context.openFileOutput("favor_arh.json", Context.MODE_PRIVATE)) {
-                fileOutputStream.write(data.getBytes());
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        private void createFavorites() {
-            List<List<AppShortcutDTO>> favorites = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-                favorites.add(new ArrayList<>());
-            }
-            saveFavorites(favorites);
         }
     }
 }

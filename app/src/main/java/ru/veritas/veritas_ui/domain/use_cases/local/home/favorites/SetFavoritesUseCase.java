@@ -2,14 +2,19 @@ package ru.veritas.veritas_ui.domain.use_cases.local.home.favorites;
 
 import java.util.List;
 
-import ru.veritas.veritas_ui.data.repositories.HomeRepository;
-import ru.veritas.veritas_ui.domain.entities.AppShortcutDTO;
+import ru.veritas.veritas_ui.domain.repositories.FavoritesRepository;
+import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
+import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 
-@FunctionalInterface
-public interface SetFavoritesUseCase {
-    void invoke(List<List<AppShortcutDTO>> favorites);
 
-    static SetFavoritesUseCase create(HomeRepository.Favorites favoritesRep) {
-        return favoritesRep::saveFavorites;
+public class SetFavoritesUseCase {
+    private final FavoritesRepository repository;
+
+    public SetFavoritesUseCase(FavoritesRepository repository) {
+        this.repository = repository;
+    }
+
+    public void invoke(List<List<AppShortcut>> favorites) {
+        repository.saveFavorites(favorites);
     }
 }
