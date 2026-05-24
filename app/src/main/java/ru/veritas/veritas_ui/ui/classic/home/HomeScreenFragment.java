@@ -2,6 +2,7 @@ package ru.veritas.veritas_ui.ui.classic.home;
 
 import android.content.ClipData;
 import android.content.ClipDescription;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -10,6 +11,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,11 +25,10 @@ import androidx.viewpager2.widget.ViewPager2;
 import java.util.List;
 
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.data.loaders.AndroidAppLauncher;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesPageFragment;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesViewPagerAdapter;
+import ru.veritas.veritas_ui.ui.common.view.ToastData;
 
 public class HomeScreenFragment extends Fragment {
 
@@ -132,11 +134,24 @@ public class HomeScreenFragment extends Fragment {
             }
         });
 
-// Загрузка избранного при старте
+        // Загрузка избранного при старте
         viewModel.loadFavorites();
 
-// Настройка drag‑and‑drop для избранного
+        // Настройка drag‑and‑drop для избранного
         setupFavoritesDragAndDrop();
+
+        viewModel.getToastMessage().observe(getViewLifecycleOwner(), toastData-> {
+            Toast toast = Toast.makeText(requireContext(), toastData.getMessage(),
+                    toastData.getDurationIsShort() ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
+            if (toastData.getType() == ToastData.ToastType.Error) {
+                LayoutInflater inflater = (LayoutInflater) requireContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View toastView = inflater.inflate(R.layout.custom_toast_error, null);
+                TextView tvErrorMessage = toastView.findViewById(R.id.tv_error_message);
+                tvErrorMessage.setText(toastData.getMessage());
+                toast.setView(toastView);
+            }
+            toast.show();
+        });
     }
 
     private void setupDragAndDrop() {
@@ -470,7 +485,7 @@ public class HomeScreenFragment extends Fragment {
             int fromPage = Integer.parseInt(parts[0]);
             int fromRow = Integer.parseInt(parts[1]);
             int fromCol = Integer.parseInt(parts[2]);
-            viewModel.swapDesktopWithFavorites(fromPage, fromRow, fromCol, targetPage, targetPos);
+            viewModel.swapShortcutWithFavoriteAndHome(fromPage, fromRow, fromCol, targetPage, targetPos);
         }
     }
 

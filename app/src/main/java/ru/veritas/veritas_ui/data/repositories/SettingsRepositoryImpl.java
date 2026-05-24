@@ -2,7 +2,6 @@ package ru.veritas.veritas_ui.data.repositories;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 import ru.veritas.veritas_ui.domain.repositories.SettingsRepository;
 

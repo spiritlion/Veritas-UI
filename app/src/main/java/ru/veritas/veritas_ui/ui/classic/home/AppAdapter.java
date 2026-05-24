@@ -4,7 +4,6 @@ import static android.view.View.INVISIBLE;
 
 import android.content.ClipData;
 import android.content.ClipDescription;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -48,7 +47,6 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
                     int targetPage, int targetRow, int targetCol);
     }
 
-    // Теперь use cases передаются извне
     public AppAdapter(List<AppShortcut> appsList, GetAppIconUseCase getAppIconUseCase,
                       LaunchAppUseCase launchAppUseCase,
                       ViewPagerPagesAdapter.OnItemClickListener listener,

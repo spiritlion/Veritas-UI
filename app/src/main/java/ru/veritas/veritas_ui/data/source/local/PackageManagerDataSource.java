@@ -6,10 +6,10 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
-import ru.veritas.veritas_ui.data.dto.AppInfoDto;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import ru.veritas.veritas_ui.data.dto.AppInfoDto;
 
 public class PackageManagerDataSource {
     private final Context context;

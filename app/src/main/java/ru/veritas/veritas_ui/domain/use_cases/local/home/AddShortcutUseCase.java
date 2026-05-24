@@ -1,7 +1,7 @@
 package ru.veritas.veritas_ui.domain.use_cases.local.home;
 
-import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
 
 public class AddShortcutUseCase {
     private final HomeRepository repository;

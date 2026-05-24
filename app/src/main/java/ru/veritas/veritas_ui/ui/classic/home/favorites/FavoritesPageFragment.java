@@ -16,10 +16,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.List;
+
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.data.loaders.AndroidIconLoader;
+import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.classic.activity.MainActivity;
 import ru.veritas.veritas_ui.ui.classic.home.AppAdapter;
 import ru.veritas.veritas_ui.ui.classic.home.HomeScreenFragment;
@@ -54,8 +54,9 @@ public class FavoritesPageFragment extends Fragment {
         recyclerView = view.findViewById(R.id.favoritesRecycler);
         int columnCount = getArguments().getInt(ARG_COLUMN_COUNT, 5);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), columnCount));
+        DependencyContainer dependencyContainer = DependencyContainer.getInstance(requireContext());
         adapter = new FavoritesAdapter(requireActivity(),
-                new GetAppIconUseCase(new AndroidIconLoader(getContext().getPackageManager())),
+                dependencyContainer.getGetAppIconUseCase(),
                 getArguments().getInt(ARG_PAGE_INDEX, 0),
                 columnCount);
         recyclerView.setAdapter(adapter);
@@ -137,7 +138,7 @@ public class FavoritesPageFragment extends Fragment {
                 String packageName = parts[1];
                 String appTitle = parts[2];
                 AppShortcut shortcut = new AppShortcut(packageName, appTitle, null);
-                viewModel.addToFavoritesAtPosition(shortcut, pageIndex, targetPos);
+                viewModel.addToFavorites(shortcut, pageIndex, targetPos);
                 return;
             }
 
@@ -145,7 +146,7 @@ public class FavoritesPageFragment extends Fragment {
                 int fromPage = Integer.parseInt(parts[1]);
                 int fromRow = Integer.parseInt(parts[2]);
                 int fromCol = Integer.parseInt(parts[3]);
-                viewModel.swapDesktopWithFavorites(fromPage, fromRow, fromCol, pageIndex, targetPos);
+                viewModel.swapShortcutWithFavoriteAndHome(fromPage, fromRow, fromCol, pageIndex, targetPos);
                 return;
             }
 

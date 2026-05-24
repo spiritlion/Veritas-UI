@@ -6,5 +6,5 @@ import ru.veritas.veritas_ui.domain.entities.AppIcon;
 
 public interface IconLoader {
     @Nullable
-    AppIcon loadIcon(String packageName); // или свой класс ImageData
+    AppIcon loadIcon(String packageName, @Nullable String iconSpec);
 }

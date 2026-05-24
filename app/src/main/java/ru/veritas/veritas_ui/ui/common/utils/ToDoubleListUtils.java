@@ -1,11 +1,11 @@
-package ru.veritas.veritas_ui.domain.use_cases.local.home;
+package ru.veritas.veritas_ui.ui.common.utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 
-public class ToDoubleListUseCase {
+public class ToDoubleListUtils {
     public static List<List<AppShortcut>> invoke(List<List<List<AppShortcut>>> tripleList) {
         List<List<AppShortcut>> doubleList = new ArrayList<>();
         if (tripleList == null || tripleList.isEmpty()) {

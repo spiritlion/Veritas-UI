@@ -1,6 +1,5 @@
 package ru.veritas.veritas_ui.ui.classic.apps;
 
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -8,11 +7,14 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
@@ -26,7 +28,6 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
 
     public interface OnItemClickListener {
         void onItemClick(AppShortcut app);
-        void onItemLongClick(AppShortcut app); // добавлен для долгого нажатия
     }
 
     public interface DragStartListener {
@@ -83,10 +84,6 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
                             isLongPressTriggered = true;
                             v.getParent().requestDisallowInterceptTouchEvent(true);
                             if (!dragStarted) {
-                                // При долгом нажатии вызываем слушатель (показ меню)
-                                if (listener != null) {
-                                    listener.onItemLongClick(dto);
-                                }
                                 showMenu(v, dto);
                             }
                         };

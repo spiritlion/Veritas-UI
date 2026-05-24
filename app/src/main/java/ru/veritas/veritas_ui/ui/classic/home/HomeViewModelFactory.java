@@ -46,10 +46,7 @@ public class HomeViewModelFactory implements ViewModelProvider.Factory {
             return (T) new HomeViewModel(
                     (android.app.Application) context.getApplicationContext(),
                     getShortcutsUseCase,
-                    addShortcutUseCase,
-                    moveShortcutUseCase,
                     setShortcutsUseCase,
-                    removeShortcutUseCase,
                     getFavoritesUseCase,
                     setFavoritesUseCase,
                     launchAppUseCase

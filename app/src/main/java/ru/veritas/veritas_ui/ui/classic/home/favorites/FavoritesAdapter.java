@@ -3,7 +3,6 @@ package ru.veritas.veritas_ui.ui.classic.home.favorites;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipDescription;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,18 +15,21 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.classic.home.AppAdapter;
 import ru.veritas.veritas_ui.ui.classic.home.HomeViewModel;
-import ru.veritas.veritas_ui.ui.common.utils.settings.SettingsActivity;
+import ru.veritas.veritas_ui.ui.common.settings.SettingsActivity;
 import ru.veritas.veritas_ui.ui.common.utils.IconUtils;
 
 public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.ViewHolder> {

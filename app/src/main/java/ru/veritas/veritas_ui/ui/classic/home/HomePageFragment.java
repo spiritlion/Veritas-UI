@@ -16,15 +16,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
+
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.data.loaders.AndroidAppLauncher;
-import ru.veritas.veritas_ui.data.loaders.AndroidIconLoader;
+import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
-
-import java.util.List;
+import ru.veritas.veritas_ui.ui.common.utils.ToDoubleListUtils;
 
 public class HomePageFragment extends Fragment {
     private static final String ARG_PAGE_INDEX = "page_index";
@@ -78,16 +77,16 @@ public class HomePageFragment extends Fragment {
 
         HomeViewModel viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
 
-        GetAppIconUseCase getAppIconUseCase = new GetAppIconUseCase(
-                new AndroidIconLoader(requireContext().getPackageManager())
-        );
-        LaunchAppUseCase launchAppUseCase = new LaunchAppUseCase(
-                new AndroidAppLauncher(requireContext())
-        );
+        DependencyContainer dependencyContainer = DependencyContainer.getInstance(requireContext());
+        GetAppIconUseCase getAppIconUseCase = dependencyContainer.getGetAppIconUseCase();
+        LaunchAppUseCase launchAppUseCase = dependencyContainer.getLaunchAppUseCase();
         adapter = new AppAdapter(null, getAppIconUseCase, launchAppUseCase, listener, pageIndex, columnCount);
-        // Перемещение иконок между ячейками
-        adapter.setDragDropListener((fromPage, fromRow, fromCol, targetPage, targetRow, targetCol) ->
-                viewModel.moveShortcut(fromPage, fromRow, fromCol, targetPage, targetRow, targetCol));
+
+        adapter.setDragDropListener((fromPage, fromRow, fromCol,
+                                     targetPage, targetRow, targetCol) ->
+                viewModel.moveShortcut(fromPage, fromRow, fromCol,
+                        targetPage, targetRow, targetCol)
+        );
 
         // Передаём drag-позицию от ViewHolder вверх во ViewModel.
         // ViewHolder получает DRAG_LOCATION, когда drag находится над конкретной карточкой.
@@ -98,7 +97,7 @@ public class HomePageFragment extends Fragment {
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
             if (state instanceof HomeScreenState.Content) {
                 List<List<List<AppShortcut>>> allPages = ((HomeScreenState.Content) state).getApps();
-                List<List<AppShortcut>> page = ToDoubleListUseCase.invoke(allPages);
+                List<List<AppShortcut>> page = ToDoubleListUtils.invoke(allPages);
                 if (pageIndex < page.size()) {
                     adapter.updateData(page.get(pageIndex));
                 }
@@ -225,7 +224,7 @@ public class HomePageFragment extends Fragment {
                                 String appTitle = parts[2];
                                 AppShortcut shortcut = new AppShortcut(packageName, appTitle, null);
 
-                                viewModel.addShortcut(shortcut, pageIndex, targetRow, targetCol);
+                                viewModel.addShortcutToDesktop(shortcut, pageIndex, targetRow, targetCol);
                                 return true;
                             }
 
@@ -243,7 +242,7 @@ public class HomePageFragment extends Fragment {
                                 int fromFavPage = Integer.parseInt(parts[1]);
                                 int fromFavPos = Integer.parseInt(parts[2]);
 
-                                viewModel.swapDesktopWithFavorites(pageIndex, targetRow, targetCol, fromFavPage, fromFavPos);
+                                viewModel.swapShortcutWithFavoriteAndHome(pageIndex, targetRow, targetCol, fromFavPage, fromFavPos);
                                 return true;
                             }
                         }

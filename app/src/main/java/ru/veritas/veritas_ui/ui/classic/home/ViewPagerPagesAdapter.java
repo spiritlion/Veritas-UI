@@ -7,10 +7,10 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.ToDoubleListUseCase;
-
 import java.util.List;
+
+import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.ui.common.utils.ToDoubleListUtils;
 
 public class ViewPagerPagesAdapter extends FragmentStateAdapter {
     private int columnCount = 4;
@@ -35,11 +35,11 @@ public class ViewPagerPagesAdapter extends FragmentStateAdapter {
         super(fragmentActivity);
         this.onItemClickListener = listener;
         this.columnCount = columnCount;
-        this.pagesData = ToDoubleListUseCase.invoke(pagesData);
+        this.pagesData = ToDoubleListUtils.invoke(pagesData);
     }
 
     public void setPagesData(List<List<List<AppShortcut>>> pagesData) {
-        this.pagesData = ToDoubleListUseCase.invoke(pagesData);
+        this.pagesData = ToDoubleListUtils.invoke(pagesData);
         notifyDataSetChanged(); // ← это было пропущено
     }
 

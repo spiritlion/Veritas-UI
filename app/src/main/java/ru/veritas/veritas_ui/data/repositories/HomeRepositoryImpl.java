@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.repositories.FavoritesRepository;
 import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
 
 public class HomeRepositoryImpl implements HomeRepository {

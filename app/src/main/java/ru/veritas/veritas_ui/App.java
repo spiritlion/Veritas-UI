@@ -2,17 +2,19 @@ package ru.veritas.veritas_ui;
 
 import android.app.Application;
 
+import ru.veritas.veritas_ui.di.DependencyContainer;
+
 public class App extends Application {
-    private AppContainer appContainer;
+    private DependencyContainer dependencyContainer;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        appContainer = new AppContainer(this);
+        dependencyContainer = new DependencyContainer(this);
     }
 
-    public AppContainer getAppContainer() {
-        return appContainer;
+    public DependencyContainer getDependencyContainer() {
+        return dependencyContainer;
     }
 }
 

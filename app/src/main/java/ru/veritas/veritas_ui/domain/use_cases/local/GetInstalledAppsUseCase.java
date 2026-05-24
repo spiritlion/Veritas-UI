@@ -2,8 +2,8 @@ package ru.veritas.veritas_ui.domain.use_cases.local;
 
 import java.util.List;
 
-import ru.veritas.veritas_ui.domain.repositories.AppRepository;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.repositories.AppRepository;
 
 public class GetInstalledAppsUseCase {
     private final AppRepository repository;

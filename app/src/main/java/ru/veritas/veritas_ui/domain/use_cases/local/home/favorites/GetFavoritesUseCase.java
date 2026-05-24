@@ -2,9 +2,8 @@ package ru.veritas.veritas_ui.domain.use_cases.local.home.favorites;
 
 import java.util.List;
 
-import ru.veritas.veritas_ui.domain.repositories.FavoritesRepository;
-import ru.veritas.veritas_ui.domain.repositories.HomeRepository;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.repositories.FavoritesRepository;
 
 
 public class GetFavoritesUseCase {

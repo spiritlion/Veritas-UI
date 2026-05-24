@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,13 +20,12 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.List;
 
+import ru.veritas.veritas_ui.App;
 import ru.veritas.veritas_ui.R;
-import ru.veritas.veritas_ui.data.loaders.AndroidIconLoader;
+import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.classic.activity.MainActivity;
-import ru.veritas.veritas_ui.ui.classic.home.HomeViewModel;
-import ru.veritas.veritas_ui.ui.classic.home.HomeViewModelFactory;
 
 public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStartListener  {
 
@@ -57,10 +55,11 @@ public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStar
 
         setupRecyclerView();
 
+        DependencyContainer dependencyContainer = ((App) requireActivity().getApplication()).getDependencyContainer();
         viewModel = new ViewModelProvider(
                 requireActivity(),
-                new AppsScreenViewModelFactory(requireContext())
-        ).get(AppsScreenViewModel.class); // TODO 
+                new AppsScreenViewModelFactory(dependencyContainer)
+        ).get(AppsScreenViewModel.class);
 
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
             if (state instanceof AppsScreenState.Loading) {
@@ -88,32 +87,12 @@ public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStar
 
     // Только фрагмент установки адаптера, остальной код без изменений
     private void setupRecyclerView() {
-        // Получаем GetAppIconUseCase из ViewModel (или создаём через фабрику, но лучше через ViewModel)
-        // Для чистоты архитектуры создадим use case во ViewModel и передадим его.
-        // В данном случае ViewModel уже имеет GetInstalledAppsUseCase, но не GetAppIconUseCase.
-        // Поэтому создадим GetAppIconUseCase через фабрику в этом фрагменте – это нарушение, но допустимо,
-        // так как это use case, не зависящий от состояния. Однако правильнее будет передать его из ViewModel.
-        // Создадим его с правильной зависимостью (AndroidIconLoader), но чтобы не нарушать инверсию,
-        // добавим в AppsScreenViewModel метод getAppIconUseCase().
-        // Для простоты оставим создание здесь, но с использованием правильного конструктора адаптера.
-        GetAppIconUseCase getAppIconUseCase = new GetAppIconUseCase(
-                new AndroidIconLoader(requireContext().getPackageManager())
-        );
-        adapter = new AppsAdapter(new AppsAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(AppShortcut app) {
-                viewModel.launchApp(app.getPackageName());
-            }
+        // === DI: получаем GetAppIconUseCase из контейнера ===
+        DependencyContainer dependencyContainer = DependencyContainer.getInstance(requireContext());
+        GetAppIconUseCase getAppIconUseCase = dependencyContainer.getGetAppIconUseCase();
 
-            @Override
-            public void onItemLongClick(AppShortcut app) {
-                // Передаём добавление ярлыка через HomeViewModel (существующий)
-                HomeViewModel homeViewModel = new ViewModelProvider(requireActivity(),
-                        new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
-                homeViewModel.addShortcut(app);
-                Toast.makeText(requireContext(), "Ярлык добавлен на рабочий стол", Toast.LENGTH_SHORT).show();
-            }
-        }, getAppIconUseCase);
+        adapter = new AppsAdapter(app -> viewModel.launchApp(app.getPackageName()), getAppIconUseCase);
+
         recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 4));
         recyclerView.setAdapter(adapter);
         adapter.setDragStartListener(this);
