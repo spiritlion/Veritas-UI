@@ -1,8 +1,6 @@
 package ru.veritas.veritas_ui.domain.entities;
 
-import java.io.Serializable;
-
-public class AppShortcut implements Serializable {
+public class AppShortcut {
     private final String packageName;
     private final String appName;
     private final String iconSpec;

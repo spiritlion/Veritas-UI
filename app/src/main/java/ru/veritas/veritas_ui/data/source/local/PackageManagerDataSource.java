@@ -31,8 +31,7 @@ public class PackageManagerDataSource {
             // Фильтруем только те приложения, которые имеют лаунчер (android.intent.action.MAIN и категорию LAUNCHER)
             if (packageManager.getLaunchIntentForPackage(app.packageName) != null) {
                 String appName = packageManager.getApplicationLabel(app).toString();
-                Drawable icon = app.loadIcon(packageManager);
-                appInfoList.add(new AppInfoDto(app.packageName, appName, icon));
+                appInfoList.add(new AppInfoDto(app.packageName, appName));
             }
         }
         Log.d("AppDataSource", "Found " + appInfoList.size() + " apps with launcher");

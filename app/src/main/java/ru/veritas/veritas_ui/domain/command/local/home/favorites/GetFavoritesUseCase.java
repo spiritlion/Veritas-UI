@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.domain.use_cases.local.home.favorites;
+package ru.veritas.veritas_ui.domain.command.local.home.favorites;
 
 import java.util.List;
 

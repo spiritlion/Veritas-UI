@@ -3,7 +3,6 @@ package ru.veritas.veritas_ui.ui.classic.home;
 import static android.view.View.INVISIBLE;
 
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -23,8 +22,9 @@ import java.util.List;
 
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.domain.command.local.LaunchAppUseCase;
+import ru.veritas.veritas_ui.domain.command.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 import ru.veritas.veritas_ui.ui.common.utils.IconUtils;
 
 public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
@@ -159,9 +159,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
                                 }
                                 int row = position / columnCount;
                                 int col = position % columnCount;
-                                ClipData.Item item = new ClipData.Item("home:" + pageIndex + ":" + row + ":" + col);
-                                ClipData dragData = new ClipData("shortcuts",
-                                        new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                                ClipData dragData = DragDataHelper.createHomeShortcutDragData(pageIndex, row, col);
                                 v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
                                 v.getParent().requestDisallowInterceptTouchEvent(false);
                             }

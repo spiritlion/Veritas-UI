@@ -17,7 +17,7 @@ import java.util.List;
 
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.domain.command.local.home.GetAppIconUseCase;
 
 public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
     private final GetAppIconUseCase getAppIconUseCase;

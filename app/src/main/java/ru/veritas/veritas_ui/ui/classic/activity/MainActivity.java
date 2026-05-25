@@ -9,7 +9,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
+import ru.veritas.veritas_ui.App;
 import ru.veritas.veritas_ui.R;
+import ru.veritas.veritas_ui.di.DependencyContainer;
+import ru.veritas.veritas_ui.ui.classic.VeritasFragmentFactory;
 import ru.veritas.veritas_ui.ui.common.settings.SettingsActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -19,17 +22,18 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Устанавливаем фабрику ДО вызова super.onCreate()
+        DependencyContainer container = ((App) getApplication()).getDependencyContainer();
+        getSupportFragmentManager().setFragmentFactory(new VeritasFragmentFactory(container));
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         viewPager = findViewById(R.id.viewPager);
         viewPager.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
-        pagerAdapter = new MainPagerAdapter(this);
+        pagerAdapter = new MainPagerAdapter(this, container);
         viewPager.setAdapter(pagerAdapter);
         viewPager.setUserInputEnabled(true);
         viewPager.setNestedScrollingEnabled(true);
-
-
     }
 
 

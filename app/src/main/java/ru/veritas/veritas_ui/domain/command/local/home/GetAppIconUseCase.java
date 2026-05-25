@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.domain.use_cases.local.home;
+package ru.veritas.veritas_ui.domain.command.local.home;
 
 import ru.veritas.veritas_ui.domain.entities.AppIcon;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;

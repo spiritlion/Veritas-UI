@@ -6,7 +6,6 @@ import ru.veritas.veritas_ui.domain.entities.AppShortcut;
 
 public interface HomeRepository {
     List<List<List<AppShortcut>>> getShortcuts();
-    void addShortcut(AppShortcut shortcut);
 
     void addShortcut(int i, int j, int k, AppShortcut shortcut);
 

@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.domain.command.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.common.utils.IconUtils;
 
 /**

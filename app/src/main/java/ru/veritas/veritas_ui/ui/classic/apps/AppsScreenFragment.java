@@ -1,7 +1,6 @@
 package ru.veritas.veritas_ui.ui.classic.apps;
 
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,17 +23,26 @@ import ru.veritas.veritas_ui.App;
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.domain.command.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.classic.activity.MainActivity;
+import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 
 public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStartListener  {
-
+    private final DependencyContainer dependencyContainer;
     private RecyclerView recyclerView;
     private AppsAdapter adapter;
     private ProgressBar progressIndicator;
     private AppsScreenViewModel viewModel;
     private TextView errorText;
     private Button errorButton;
+
+    public AppsScreenFragment(DependencyContainer dependencyContainer) {
+        this.dependencyContainer = dependencyContainer;
+    }
+
+    public AppsScreenFragment() {
+        this(null);
+    }
 
 
     @Nullable
@@ -88,7 +96,6 @@ public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStar
     // Только фрагмент установки адаптера, остальной код без изменений
     private void setupRecyclerView() {
         // === DI: получаем GetAppIconUseCase из контейнера ===
-        DependencyContainer dependencyContainer = DependencyContainer.getInstance(requireContext());
         GetAppIconUseCase getAppIconUseCase = dependencyContainer.getGetAppIconUseCase();
 
         adapter = new AppsAdapter(app -> viewModel.launchApp(app.getPackageName()), getAppIconUseCase);
@@ -122,10 +129,11 @@ public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStar
             }
         }
         view.postDelayed(() -> {
-            ClipData.Item item = new ClipData.Item("app:" + app.getPackageName() + ":" + app.getAppName());
-            ClipData dragData = new ClipData("app_shortcut",
-                    new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
-            view.startDragAndDrop(dragData, new View.DragShadowBuilder(view), null, 0);
+            ClipData dragData = DragDataHelper.createAppDragData(
+                    app.getPackageName(),
+                    app.getAppName()
+            );
+            view.startDragAndDrop(dragData, new View.DragShadowBuilder(view), null,0);
         }, 100);
     }
 }

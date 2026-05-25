@@ -2,7 +2,6 @@ package ru.veritas.veritas_ui.ui.classic.home.favorites;
 
 import android.app.Activity;
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
@@ -26,10 +25,11 @@ import java.util.List;
 
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.domain.command.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.classic.home.AppAdapter;
 import ru.veritas.veritas_ui.ui.classic.home.HomeViewModel;
 import ru.veritas.veritas_ui.ui.common.settings.SettingsActivity;
+import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 import ru.veritas.veritas_ui.ui.common.utils.IconUtils;
 
 public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.ViewHolder> {
@@ -336,8 +336,7 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
     private void startDrag(View v, int position) {
         AppShortcut item = displayItems.get(position);
         if (item == null || isSpecialItem(item)) return;
-        ClipData.Item clipItem = new ClipData.Item("fav:" + pageIndex + ":" + position);
-        ClipData dragData = new ClipData("favorites", new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, clipItem);
+        ClipData dragData = DragDataHelper.createFavoriteDragData(pageIndex, position);
         v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
     }
 

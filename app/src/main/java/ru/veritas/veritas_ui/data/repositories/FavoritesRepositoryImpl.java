@@ -34,9 +34,7 @@ public class FavoritesRepositoryImpl implements FavoritesRepository {
             return gson.fromJson(streamReader, type);
         } catch (FileNotFoundException e) {
             Log.e("get f", "Файл не найден, создаю новый");
-            createFavorites();
-            // После создания читаем заново
-            return getFavorites();
+            return createFavorites();
         } catch (IOException ex) {
             Log.e("get f", "Ошибка ввода-вывода", ex);
             return new ArrayList<>(); // или брось RuntimeException
@@ -57,7 +55,7 @@ public class FavoritesRepositoryImpl implements FavoritesRepository {
         }
     }
 
-    private void createFavorites() {
+    private List<List<AppShortcut>> createFavorites() {
         List<List<AppShortcut>> favorites = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             favorites.add(new ArrayList<>());
@@ -66,5 +64,6 @@ public class FavoritesRepositoryImpl implements FavoritesRepository {
             }
         }
         saveFavorites(favorites);
+        return favorites;
     }
 }

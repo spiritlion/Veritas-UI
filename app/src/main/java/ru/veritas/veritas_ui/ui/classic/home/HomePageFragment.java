@@ -21,8 +21,8 @@ import java.util.List;
 import ru.veritas.veritas_ui.R;
 import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
-import ru.veritas.veritas_ui.domain.use_cases.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.domain.command.local.LaunchAppUseCase;
+import ru.veritas.veritas_ui.domain.command.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.common.utils.ToDoubleListUtils;
 
 public class HomePageFragment extends Fragment {

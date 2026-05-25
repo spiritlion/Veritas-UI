@@ -38,8 +38,7 @@ public class HomeRepositoryImpl implements HomeRepository {
             createShortcuts();
             return getShortcuts();
         } catch (IOException ex) {
-            Log.e("get s", "Ошибка ввода-вывода", ex);
-            return new ArrayList<>(); // или брось RuntimeException
+            throw new RuntimeException(ex);
         }
     }
 
@@ -75,21 +74,6 @@ public class HomeRepositoryImpl implements HomeRepository {
 //        return null;
 //    }
 
-
-    @Override
-    public void addShortcut(AppShortcut shortcut) {
-        List<List<List<AppShortcut>>> shortcuts = getShortcuts();
-        for (int i = 0; i < shortcuts.size(); i++) {
-            for (int j = 0; j < shortcuts.get(i).size(); j++) {
-                for (int k = 0; k < shortcuts.get(i).get(j).size(); k++) {
-                    if (shortcuts.get(i).get(j).get(k) == null) {
-                        addShortcut(i, j, k, shortcut);
-                        return;
-                    }
-                }
-            }
-        }
-    }
     @Override
     public void addShortcut(int i, int j, int k, AppShortcut shortcut) {
         Log.d("add s", "1");

@@ -1,32 +1,27 @@
 // AppsScreenViewModel.java
 package ru.veritas.veritas_ui.ui.classic.apps;
 
-import android.app.Application;
-
-import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
-import ru.veritas.veritas_ui.domain.use_cases.local.GetInstalledAppsUseCase;
-import ru.veritas.veritas_ui.domain.use_cases.local.LaunchAppUseCase;
+import ru.veritas.veritas_ui.domain.command.local.GetInstalledAppsUseCase;
+import ru.veritas.veritas_ui.domain.command.local.LaunchAppUseCase;
 
-public class AppsScreenViewModel extends AndroidViewModel {
+public class AppsScreenViewModel extends ViewModel {
 
     private final MutableLiveData<AppsScreenState> state = new MutableLiveData<>();
     private final GetInstalledAppsUseCase getInstalledAppsUseCase;
     private final LaunchAppUseCase launchAppUseCase;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    public AppsScreenViewModel(@NonNull Application application,
-                               GetInstalledAppsUseCase getInstalledAppsUseCase,
+    public AppsScreenViewModel(GetInstalledAppsUseCase getInstalledAppsUseCase,
                                LaunchAppUseCase launchAppUseCase) {
-        super(application);
         this.getInstalledAppsUseCase = getInstalledAppsUseCase;
         this.launchAppUseCase = launchAppUseCase;
     }

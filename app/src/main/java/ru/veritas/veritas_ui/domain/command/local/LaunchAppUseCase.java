@@ -1,4 +1,4 @@
-package ru.veritas.veritas_ui.domain.use_cases.local;
+package ru.veritas.veritas_ui.domain.command.local;
 
 import ru.veritas.veritas_ui.domain.loaders.AppLauncher;
 

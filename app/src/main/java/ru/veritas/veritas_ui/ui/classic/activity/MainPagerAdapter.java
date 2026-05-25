@@ -5,35 +5,30 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.ui.classic.apps.AppsScreenFragment;
 import ru.veritas.veritas_ui.ui.classic.home.HomeScreenFragment;
 
 public class MainPagerAdapter extends FragmentStateAdapter {
+    private final DependencyContainer container;
 
-    private final FragmentActivity activity;
-    private Fragment[] fragments = new Fragment[2]; // массив для хранения фрагментов
-
-    public MainPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
+    public MainPagerAdapter(@NonNull FragmentActivity fragmentActivity, DependencyContainer container) {
         super(fragmentActivity);
-        this.activity = fragmentActivity;
+        this.container = container;
     }
 
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        Fragment fragment;
         if (position == 0) {
-            fragment = new HomeScreenFragment();
+            return new HomeScreenFragment(container);
         } else {
-            fragment = new AppsScreenFragment();
+            return new AppsScreenFragment(container);
         }
-        fragments[position] = fragment; // сохраняем ссылку
-        return fragment;
     }
 
     @Override
     public int getItemCount() {
         return 2;
     }
-
 }

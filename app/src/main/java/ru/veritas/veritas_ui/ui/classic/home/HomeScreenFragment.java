@@ -1,5 +1,6 @@
 package ru.veritas.veritas_ui.ui.classic.home;
 
+import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
@@ -24,14 +25,18 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.List;
 
+import ru.veritas.veritas_ui.App;
 import ru.veritas.veritas_ui.R;
+import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.domain.entities.AppShortcut;
+import ru.veritas.veritas_ui.domain.entities.DragEventData;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesPageFragment;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesViewPagerAdapter;
+import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 import ru.veritas.veritas_ui.ui.common.view.ToastData;
 
 public class HomeScreenFragment extends Fragment {
-
+    private final DependencyContainer dependencyContainer;
     private static final long PAGE_SWITCH_DELAY_MS = 600;
     private ViewPager2 viewPager;
     private ViewPagerPagesAdapter adapter;
@@ -57,6 +62,14 @@ public class HomeScreenFragment extends Fragment {
     private View leftFavIndicator, rightFavIndicator;
     private boolean isFavDragging = false;
 
+    public HomeScreenFragment(DependencyContainer dependencyContainer) {
+        this.dependencyContainer = dependencyContainer;
+    }
+
+    public HomeScreenFragment() {
+        this(null);
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -81,9 +94,8 @@ public class HomeScreenFragment extends Fragment {
         favoritesViewPager.setAdapter(favoritesAdapter);
         favoritesViewPager.setOffscreenPageLimit(2);
 
-        viewModel = new ViewModelProvider(requireActivity(),
-                new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
-
+        viewModel = new ViewModelProvider(requireActivity(), new HomeViewModelFactory(dependencyContainer))
+                .get(HomeViewModel.class);
         viewModel.loadShortcuts();
 
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
@@ -253,20 +265,16 @@ public class HomeScreenFragment extends Fragment {
         clearChildHighlight();
 
         ClipData clipData = event.getClipData();
-        if (clipData == null || clipData.getItemCount() == 0) return;
-
-        String data = clipData.getItemAt(0).getText().toString();
-        String[] parts = data.split(":");
-        if (parts.length != 3) return;
-
-        int fromPage = Integer.parseInt(parts[0]);
-        int fromRow = Integer.parseInt(parts[1]);
-        int fromCol = Integer.parseInt(parts[2]);
+        DragEventData data = DragDataHelper.parse(clipData);
+        if (data == null) return;
 
         float x = event.getX();
         float y = event.getY();
 
-        Fragment currentFragment = getChildFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+        // Определяем текущую страницу ViewPager, на которую происходит дроп
+        int currentPage = viewPager.getCurrentItem();
+
+        Fragment currentFragment = getChildFragmentManager().findFragmentByTag("f" + currentPage);
         if (!(currentFragment instanceof HomePageFragment)) return;
 
         RecyclerView recyclerView = ((HomePageFragment) currentFragment).getRecyclerView();
@@ -290,8 +298,21 @@ public class HomeScreenFragment extends Fragment {
         int targetRow = targetPos / columnCount;
         int targetCol = targetPos % columnCount;
 
-        viewModel.moveShortcut(fromPage, fromRow, fromCol,
-                viewPager.getCurrentItem(), targetRow, targetCol);
+        switch (data.getSourceType()) {
+            case APPS:
+                viewModel.addShortcutToDesktop(
+                        new AppShortcut(data.getPackageName(), data.getAppName(), null),
+                        currentPage, targetRow, targetCol);
+                break;
+            case HOME:
+                viewModel.moveShortcut(data.getPage(), data.getRow(), data.getCol(),
+                        currentPage, targetRow, targetCol);
+                break;
+            case FAVORITES:
+                viewModel.swapShortcutWithFavoriteAndHome(currentPage, targetRow, targetCol,
+                        data.getPage(), data.getPosition());
+                break;
+        }
     }
 
     private void highlightChild(View child) {
@@ -500,9 +521,7 @@ public class HomeScreenFragment extends Fragment {
             public void onItemLongClick(int page, int row, int col, View v) {
                 viewModel.setDragSource(page, row, col);
                 viewModel.setDragging(true);
-                ClipData.Item item = new ClipData.Item(page + ":" + row + ":" + col);
-                ClipData dragData = new ClipData("shortcuts",
-                        new String[]{ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                ClipData dragData = DragDataHelper.createHomeShortcutDragData(page, row, col);
                 v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
             }
         };
