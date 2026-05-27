@@ -28,7 +28,7 @@
             android:stateNotNeeded="true"
             android:clearTaskOnLaunch="true"
             android:launchMode="standard"
-            android:name=".ui.classic.activity.MainActivity"
+            android:name=".activity.classic.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.HomeScreen">
             <intent-filter>
@@ -39,6 +39,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".ui.common.settings.SettingsActivity" />
+        <activity android:name=".activity.settings.SettingsActivity" />
     </application>
 </manifest>
