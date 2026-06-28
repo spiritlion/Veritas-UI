@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 
 import ru.veritas.veritas_ui.core.navigators.Navigator;
+import ru.veritas.veritas_ui.core.repositories.SettingsRepository;
 import ru.veritas.veritas_ui.data.command.CommandFactoryImpl;
 import ru.veritas.veritas_ui.data.dto.AppInfoDto;
 import ru.veritas.veritas_ui.data.loaders.AndroidAppLauncher;
@@ -17,6 +18,7 @@ import ru.veritas.veritas_ui.core.mappers.AppShortcutMapper;
 import ru.veritas.veritas_ui.core.repositories.AppRepository;
 import ru.veritas.veritas_ui.core.repositories.FavoritesRepository;
 import ru.veritas.veritas_ui.core.repositories.HomeRepository;
+import ru.veritas.veritas_ui.data.repositories.SettingsRepositoryImpl;
 
 public class DependencyContainer {
     private Context context;
@@ -26,6 +28,7 @@ public class DependencyContainer {
     private final AppRepository appRepository;
     private final HomeRepository homeRepository;
     private final FavoritesRepository favoritesRepository;
+    private final SettingsRepository settingsRepository;  // новое поле
     private final CommandFactory commandFactory;
 
     public DependencyContainer(Context context) {
@@ -37,6 +40,7 @@ public class DependencyContainer {
 
         appRepository = new AppRepositoryImpl(dataSource, mapper);
         homeRepository = new HomeRepositoryImpl(context);
+        settingsRepository = new SettingsRepositoryImpl(context);
         favoritesRepository = new FavoritesRepositoryImpl(context);
 
         navigator = new NavigatorImpl(context);
@@ -68,6 +72,9 @@ public class DependencyContainer {
 
     public FavoritesRepository getFavoritesRepository() {
         return favoritesRepository;
+    }
+    public SettingsRepository getSettingsRepository() {
+        return settingsRepository;
     }
 
     public CommandFactory getCommandFactory() {

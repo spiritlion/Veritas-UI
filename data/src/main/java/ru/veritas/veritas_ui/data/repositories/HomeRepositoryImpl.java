@@ -35,8 +35,9 @@ public class HomeRepositoryImpl implements HomeRepository {
             return gson.fromJson(streamReader, type);
         } catch (FileNotFoundException e) {
             Log.e("get s", "Файл не найден, создаю новый");
-            createShortcuts();
-            return getShortcuts();
+            List<List<List<AppShortcut>>> newShortcuts = createShortcuts(); // теперь возвращает структуру
+            saveShortcuts(newShortcuts);
+            return newShortcuts;   // ✅ не вызываем рекурсивно getShortcuts()
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -104,7 +105,7 @@ public class HomeRepositoryImpl implements HomeRepository {
         return getShortcuts().get(i).get(j).get(k);
     }
 
-    private void createShortcuts() {
+    private List<List<List<AppShortcut>>> createShortcuts() {
         List<List<List<AppShortcut>>> shortcuts = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             shortcuts.add(new ArrayList<>());
@@ -115,7 +116,7 @@ public class HomeRepositoryImpl implements HomeRepository {
                 }
             }
         }
-        saveShortcuts(shortcuts);
+        return shortcuts;  // не вызываем saveShortcuts() – это делает вызывающий код
     }
 
     public void saveShortcuts(List<List<List<AppShortcut>>> shortcuts) {

@@ -99,7 +99,7 @@ public class HomeScreenFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity(),
                 new HomeViewModelFactory(homeCommandFactory, favoritesCommandFactory, useCaseFactory)
         ).get(HomeViewModel.class);
-        viewModel.loadShortcuts();
+        viewModel.loadInitialData();
 
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
             if (state instanceof HomeScreenState.Content) {
@@ -151,8 +151,6 @@ public class HomeScreenFragment extends Fragment {
             }
         });
 
-        // Загрузка избранного при старте
-        viewModel.loadFavorites();
 
         // Настройка drag‑and‑drop для избранного
         setupFavoritesDragAndDrop();

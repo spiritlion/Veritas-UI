@@ -10,6 +10,9 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import ru.veritas.veritas_ui.App;
+import ru.veritas.veritas_ui.core.repositories.SettingsRepository;
+import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.ui.R;
 import ru.veritas.veritas_ui.activity.classic.MainActivity;
 import ru.veritas.veritas_ui.ui.common.settings.SettingsViewModel;
@@ -46,8 +49,10 @@ public class SettingsActivity extends AppCompatActivity {
         pagesValue = findViewById(R.id.pagesValue);
         paddingValue = findViewById(R.id.paddingValue);
 
-        // Создаём ViewModel через фабрику
-        viewModel = new ViewModelProvider(this, new SettingsViewModelFactory(this))
+        DependencyContainer container = ((App) getApplication()).getDependencyContainer();
+        SettingsRepository repository = container.getSettingsRepository();
+
+        viewModel = new ViewModelProvider(this, new SettingsViewModelFactory(repository))
                 .get(SettingsViewModel.class);
 
         // Наблюдаем за изменениями настроек

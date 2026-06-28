@@ -38,9 +38,11 @@ public class CommandFactoryImpl implements CommandFactory {
     private final AppRepository appRepository;
     private final HomeRepository homeRepository;
     private final FavoritesRepository favoritesRepository;
+    private final UseCase useCase;   // один экземпляр, создаётся в конструкторе
     public final Navigator navigator;
     public final AppLauncher appLauncher;
     private final PackageManager pm;
+
 
     public CommandFactoryImpl(AppRepository appRepository,
                               HomeRepository homeRepository,
@@ -53,7 +55,9 @@ public class CommandFactoryImpl implements CommandFactory {
         this.navigator = navigator;
         this.appLauncher = appLauncher;
         this.pm = pm;
+        this.useCase = new UseCases();
     }
+
     CommandFactory.HomeScreen homeScreen = null;
     @Override
     public CommandFactory.HomeScreen getHomeScreenFactory() {
@@ -135,100 +139,69 @@ public class CommandFactoryImpl implements CommandFactory {
         return settings;
     }
     class Settings implements CommandFactory.Settings { }
-    UseCase useCase = null;
     @Override
     public CommandFactory.UseCase getUseCaseFactory() {
-        if(useCase ==null)
-            useCase = this.new UseCases();
         return useCase;
     }
-    class UseCases implements CommandFactory.UseCase {
-        OpenSettingsUseCase openSettingUseCase = null;
-        @Override
-        public void setOpenSettingsUseCase(OpenSettingsUseCase useCase) {
-            this.openSettingUseCase = useCase;
+    // Вложенный класс – теперь неизменяемый
+    private class UseCases implements CommandFactory.UseCase {
+        private final OpenSettingsUseCase openSettingsUseCase;
+        private final GetInstalledAppsUseCase getInstalledAppsUseCase;
+        private final LaunchAppUseCase launchAppUseCase;
+        private final GetShortcutsUseCase getShortcutsUseCase;
+        private final GetFavoritesUseCase getFavoritesUseCase;
+        private final GetAppIconUseCase getAppIconUseCase;
+
+        public UseCases() {
+            // 1. Простые use case
+            this.openSettingsUseCase = new OpenSettingsUseCase(navigator);
+            this.getInstalledAppsUseCase = new GetInstalledAppsUseCase(appRepository);
+            this.launchAppUseCase = new LaunchAppUseCase(appLauncher);
+            this.getShortcutsUseCase = new GetShortcutsUseCase(homeRepository);
+            this.getFavoritesUseCase = new GetFavoritesUseCase(favoritesRepository);
+
+            // 2. Сложный GetAppIconUseCase (логика построения загрузчиков вынесена сюда же)
+            IconLoader defaultLoader = new DefaultIconLoader(pm);
+            IconLoader iconPackLoader = new IconPackIconLoader(pm);
+            IconLoader fileLoader = new FileIconLoader();
+
+            CompositeIconLoader composite = new CompositeIconLoader();
+            composite.addLoader(iconPackLoader);
+            composite.addLoader(fileLoader);
+            composite.addLoader(defaultLoader);
+
+            IconLoader cachedLoader = new CachedIconLoader(composite);
+            this.getAppIconUseCase = new GetAppIconUseCase(cachedLoader);
         }
 
         @Override
         public OpenSettingsUseCase getOpenSettingsUseCase() {
-            if (openSettingUseCase == null)
-                openSettingUseCase = new OpenSettingsUseCase(navigator);
-            return openSettingUseCase;
-        }
-
-        GetInstalledAppsUseCase getInstalledAppUseCase = null;
-        @Override
-        public void setGetInstalledAppsUseCase(GetInstalledAppsUseCase useCase) {
-            getInstalledAppUseCase = useCase;
+            return openSettingsUseCase;
         }
 
         @Override
         public GetInstalledAppsUseCase getGetInstalledAppUseCase() {
-            if (getInstalledAppUseCase == null)
-                getInstalledAppUseCase = new GetInstalledAppsUseCase(appRepository);
-            return getInstalledAppUseCase;
-        }
-        LaunchAppUseCase launchAppUseCase = null;
-        @Override
-        public void setLaunchAppUseCase(LaunchAppUseCase launchAppUseCase) {
-            this.launchAppUseCase = launchAppUseCase;
+            return getInstalledAppsUseCase;
         }
 
         @Override
         public LaunchAppUseCase getLaunchAppUseCase() {
-            if (launchAppUseCase == null)
-                launchAppUseCase = new LaunchAppUseCase(appLauncher);
             return launchAppUseCase;
-        }
-
-        GetShortcutsUseCase getShortcutsUseCase = null;
-        @Override
-        public void setGetShortcutsUseCase(GetShortcutsUseCase useCase) {
-            getShortcutsUseCase = useCase;
         }
 
         @Override
         public GetShortcutsUseCase getGetShortcutsUseCase() {
-            if (getShortcutsUseCase == null)
-                getShortcutsUseCase = new GetShortcutsUseCase(homeRepository);
             return getShortcutsUseCase;
-        }
-
-        GetFavoritesUseCase getFavoritesUseCase = null;
-        @Override
-        public void setGetFavoritesUseCase(GetFavoritesUseCase useCase) {
-            getFavoritesUseCase = useCase;
         }
 
         @Override
         public GetFavoritesUseCase getGetFavoritesUseCase() {
-            if (getFavoritesUseCase == null)
-                getFavoritesUseCase = new GetFavoritesUseCase(favoritesRepository);
             return getFavoritesUseCase;
         }
 
-        GetAppIconUseCase getAppIconUseCase = null;
         @Override
         public GetAppIconUseCase getGetAppIconUseCase() {
-            if (getAppIconUseCase == null) {
-                IconLoader defaultLoader = new DefaultIconLoader(pm);
-                IconLoader iconPackLoader = new IconPackIconLoader(pm);
-                IconLoader fileLoader = new FileIconLoader();
-
-                CompositeIconLoader composite = new CompositeIconLoader();
-                composite.addLoader(iconPackLoader);
-                composite.addLoader(fileLoader);
-                composite.addLoader(defaultLoader);
-
-                IconLoader cachedLoader = new CachedIconLoader(composite);
-                getAppIconUseCase = new GetAppIconUseCase(cachedLoader);
-            }
             return getAppIconUseCase;
-        }
-
-        @Override
-        public void setGetAppIconUseCase(GetAppIconUseCase useCase) {
-            getAppIconUseCase = useCase;
         }
     }
 }

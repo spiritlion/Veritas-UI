@@ -46,23 +46,16 @@ public interface CommandFactory {
 
     }
     interface UseCase {
-        void setOpenSettingsUseCase(OpenSettingsUseCase useCase);
         OpenSettingsUseCase getOpenSettingsUseCase();
 
-        void setGetInstalledAppsUseCase(GetInstalledAppsUseCase useCase);
         GetInstalledAppsUseCase getGetInstalledAppUseCase();
 
-        void setLaunchAppUseCase(LaunchAppUseCase app);
         LaunchAppUseCase getLaunchAppUseCase();
 
-
-        void setGetShortcutsUseCase(GetShortcutsUseCase useCase);
         GetShortcutsUseCase getGetShortcutsUseCase();
 
-        void setGetFavoritesUseCase(GetFavoritesUseCase useCase);
         GetFavoritesUseCase getGetFavoritesUseCase();
 
         GetAppIconUseCase getGetAppIconUseCase();
-        void setGetAppIconUseCase(GetAppIconUseCase useCase);
     }
 }
