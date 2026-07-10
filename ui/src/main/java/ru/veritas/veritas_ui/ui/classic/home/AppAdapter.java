@@ -3,12 +3,8 @@ package ru.veritas.veritas_ui.ui.classic.home;
 import static android.view.View.INVISIBLE;
 
 import android.content.ClipData;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -26,6 +22,7 @@ import ru.veritas.veritas_ui.core.command.local.LaunchAppUseCase;
 import ru.veritas.veritas_ui.core.command.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 import ru.veritas.veritas_ui.ui.common.utils.IconUtils;
+import ru.veritas.veritas_ui.ui.common.utils.LongPressDragTouchListener;
 
 public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     private List<AppShortcut> appsList;
@@ -96,90 +93,35 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
                 holder.itemView.getResources()
         ));
 
-        holder.app.setOnClickListener(v -> {
-            if (listener != null) listener.onItemClick(app);
-        });
-
-        holder.app.setOnTouchListener(new View.OnTouchListener() {
-            private Handler handler = new Handler(Looper.getMainLooper());
-            private Runnable longPressRunnable;
-            private boolean isMenuShown = false;
-            private boolean dragLaunched = false;
-            private boolean isLongPressTriggered = false;
-            private boolean hasMoved = false;
-            private float startX, startY;
-            private float touchSlop;
+        // Клик, долгое нажатие (меню) и drag теперь обрабатывает один переиспользуемый
+        // LongPressDragTouchListener — отдельный setOnClickListener больше не нужен,
+        // т.к. обычный тап тоже приходит через onClick() колбэка.
+        holder.app.setOnTouchListener(new LongPressDragTouchListener(new LongPressDragTouchListener.Callback() {
+            @Override
+            public void onClick() {
+                if (listener != null) listener.onItemClick(app);
+            }
 
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (touchSlop == 0) {
-                    touchSlop = ViewConfiguration.get(v.getContext()).getScaledTouchSlop();
-                }
+            public void onLongPress() {
+                showAppMenu(holder.app, app);
+            }
 
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        startX = event.getRawX();
-                        startY = event.getRawY();
-                        isMenuShown = false;
-                        dragLaunched = false;
-                        isLongPressTriggered = false;
-                        hasMoved = false;
-                        v.getParent().requestDisallowInterceptTouchEvent(true);
-
-                        longPressRunnable = () -> {
-                            isLongPressTriggered = true;
-                            if (!dragLaunched) {
-                                showAppMenu(holder.app, app);
-                                isMenuShown = true;
-                            }
-                        };
-                        handler.postDelayed(longPressRunnable, 500);
-                        return true;
-
-                    case MotionEvent.ACTION_MOVE:
-                        if (dragLaunched) return true;
-
-                        float deltaX = Math.abs(event.getRawX() - startX);
-                        float deltaY = Math.abs(event.getRawY() - startY);
-
-                        if (deltaX > touchSlop || deltaY > touchSlop) {
-                            if (!hasMoved) {
-                                hasMoved = true;
-                                handler.removeCallbacks(longPressRunnable);
-                                v.getParent().requestDisallowInterceptTouchEvent(false);
-                            }
-
-                            if (isLongPressTriggered) {
-                                dragLaunched = true;
-                                handler.removeCallbacks(longPressRunnable);
-                                if (isMenuShown && currentPopup != null) {
-                                    currentPopup.dismiss();
-                                    currentPopup = null;
-                                    isMenuShown = false;
-                                }
-                                int row = position / columnCount;
-                                int col = position % columnCount;
-                                ClipData dragData = DragDataHelper.createHomeShortcutDragData(pageIndex, row, col);
-                                v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
-                                v.getParent().requestDisallowInterceptTouchEvent(false);
-                            }
-                        }
-                        return true;
-
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_CANCEL:
-                        handler.removeCallbacks(longPressRunnable);
-                        v.getParent().requestDisallowInterceptTouchEvent(false);
-                        if (!dragLaunched && !isLongPressTriggered && !hasMoved) {
-                            v.performClick();
-                        }
-                        return true;
-
-                    default:
-                        return false;
+            @Override
+            public void onDragStart() {
+                if (currentPopup != null) {
+                    currentPopup.dismiss();
+                    currentPopup = null;
                 }
             }
-        });
+
+            @Override
+            public ClipData createDragData() {
+                int row = position / columnCount;
+                int col = position % columnCount;
+                return DragDataHelper.createHomeShortcutDragData(pageIndex, row, col);
+            }
+        }));
 
         ViewGroup.LayoutParams params = holder.itemView.getLayoutParams();
         if (params != null) {

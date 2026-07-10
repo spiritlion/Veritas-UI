@@ -3,7 +3,6 @@ package ru.veritas.veritas_ui.ui.classic.home;
 import android.content.ClipData;
 import android.content.Context;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
@@ -24,42 +23,39 @@ import androidx.viewpager2.widget.ViewPager2;
 import java.util.List;
 
 import ru.veritas.veritas_ui.core.command.CommandFactory;
-import ru.veritas.veritas_ui.ui.R;
 import ru.veritas.veritas_ui.core.entities.AppShortcut;
 import ru.veritas.veritas_ui.core.entities.DragEventData;
+import ru.veritas.veritas_ui.ui.R;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesPageFragment;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesViewPagerAdapter;
 import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
+import ru.veritas.veritas_ui.ui.common.utils.DragHighlightHelper;
+import ru.veritas.veritas_ui.ui.common.utils.EdgeAutoScrollController;
 import ru.veritas.veritas_ui.ui.common.view.ToastData;
 
 public class HomeScreenFragment extends Fragment {
+
     private final CommandFactory.HomeScreen homeCommandFactory;
     private final CommandFactory.Favorites favoritesCommandFactory;
     private final CommandFactory.UseCase useCaseFactory;
-    private static final long PAGE_SWITCH_DELAY_MS = 600;
+
+    // Новые утилиты
+    private EdgeAutoScrollController mainPagerController;
+    private EdgeAutoScrollController favoritesPagerController;
+    private final DragHighlightHelper highlightHelper = new DragHighlightHelper(R.drawable.highlight_border);
+
+    // View
     private ViewPager2 viewPager;
     private ViewPagerPagesAdapter adapter;
     private HomeViewModel viewModel;
-    private View leftEdgeIndicator;
-    private View rightEdgeIndicator;
+    private View leftEdgeIndicator, rightEdgeIndicator;
     private FrameLayout homeFragmentLayout;
-
-    private boolean isDragging = false;
-    private int currentPageDuringDrag = -1;
-    private int totalPagesDuringDrag = 0;
-    private Runnable pageFlipRunnable;
-    private final Handler handler = new Handler();
-    private long lastFlipTime = 0;
-    private static final long MIN_FLIP_INTERVAL_MS = 600;
-
-    // Для подсветки элемента в RecyclerView
-    private View highlightedView = null;
-
-
     private ViewPager2 favoritesViewPager;
     private FavoritesViewPagerAdapter favoritesAdapter;
     private View leftFavIndicator, rightFavIndicator;
-    private boolean isFavDragging = false;
+
+    // Состояние drag (для синхронизации с ViewModel)
+    private boolean isDragging = false;
 
     public HomeScreenFragment(
             CommandFactory.HomeScreen homeCommandFactory,
@@ -71,7 +67,6 @@ public class HomeScreenFragment extends Fragment {
         this.useCaseFactory = useCaseFactory;
     }
 
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -82,31 +77,44 @@ public class HomeScreenFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // Инициализация View
         viewPager = view.findViewById(R.id.viewPager);
         viewPager.setOffscreenPageLimit(3);
         homeFragmentLayout = view.findViewById(R.id.home_fragment);
         leftEdgeIndicator = view.findViewById(R.id.leftEdgeIndicator);
         rightEdgeIndicator = view.findViewById(R.id.rightEdgeIndicator);
 
-
         favoritesViewPager = view.findViewById(R.id.favoritesViewPager);
         leftFavIndicator = view.findViewById(R.id.leftFavIndicator);
         rightFavIndicator = view.findViewById(R.id.rightFavIndicator);
-        favoritesAdapter = new FavoritesViewPagerAdapter(this, useCaseFactory.getGetAppIconUseCase(), useCaseFactory.getOpenSettingsUseCase());
+        favoritesAdapter = new FavoritesViewPagerAdapter(
+                this,
+                useCaseFactory.getGetAppIconUseCase(),
+                useCaseFactory.getOpenSettingsUseCase()
+        );
         favoritesViewPager.setAdapter(favoritesAdapter);
         favoritesViewPager.setOffscreenPageLimit(2);
 
-        viewModel = new ViewModelProvider(requireActivity(),
+        // ViewModel
+        viewModel = new ViewModelProvider(
+                requireActivity(),
                 new HomeViewModelFactory(homeCommandFactory, favoritesCommandFactory, useCaseFactory)
         ).get(HomeViewModel.class);
         viewModel.loadInitialData();
 
+        // Подписка на состояние рабочего стола
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
             if (state instanceof HomeScreenState.Content) {
                 List<List<List<AppShortcut>>> apps = ((HomeScreenState.Content) state).getApps();
                 if (adapter == null) {
-                    adapter = new ViewPagerPagesAdapter(createClickListener(), requireActivity(),
-                            useCaseFactory.getGetAppIconUseCase(), useCaseFactory.getLaunchAppUseCase(), 4);
+                    adapter = new ViewPagerPagesAdapter(
+                            createClickListener(),
+                            requireActivity(),
+                            useCaseFactory.getGetAppIconUseCase(),
+                            useCaseFactory.getLaunchAppUseCase(),
+                            4
+                    );
                     adapter.setPagesData(apps);
                     viewPager.setAdapter(adapter);
                 } else {
@@ -114,32 +122,6 @@ public class HomeScreenFragment extends Fragment {
                 }
             }
         });
-
-        viewModel.isDragging().observe(getViewLifecycleOwner(), dragging -> {
-            isDragging = dragging;
-            if (dragging) {
-                currentPageDuringDrag = viewPager.getCurrentItem();
-                totalPagesDuringDrag = adapter.getItemCount();
-                updateEdgeIndicators(currentPageDuringDrag);
-            } else {
-                cancelPageFlip();
-                hideAllEdgeIndicators();
-            }
-        });
-
-        viewModel.getDragEdge().observe(getViewLifecycleOwner(), direction -> {
-            if (!isDragging) return;
-            if (direction == -1 && currentPageDuringDrag > 0) {
-                schedulePageFlip(currentPageDuringDrag - 1);
-            } else if (direction == 1 && currentPageDuringDrag < totalPagesDuringDrag - 1) {
-                schedulePageFlip(currentPageDuringDrag + 1);
-            } else if (direction == 0) {
-                cancelPageFlip();
-            }
-        });
-
-        setupDragAndDrop();
-
 
         // Подписка на страницы избранного
         viewModel.getFavoritesPages().observe(getViewLifecycleOwner(), pages -> {
@@ -151,13 +133,13 @@ public class HomeScreenFragment extends Fragment {
             }
         });
 
-
-        // Настройка drag‑and‑drop для избранного
-        setupFavoritesDragAndDrop();
-
-        viewModel.getToastMessage().observe(getViewLifecycleOwner(), toastData-> {
-            Toast toast = Toast.makeText(requireContext(), toastData.getMessage(),
-                    toastData.getDurationIsShort() ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
+        // Toast-сообщения
+        viewModel.getToastMessage().observe(getViewLifecycleOwner(), toastData -> {
+            Toast toast = Toast.makeText(
+                    requireContext(),
+                    toastData.getMessage(),
+                    toastData.getDurationIsShort() ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG
+            );
             if (toastData.getType() == ToastData.ToastType.Error) {
                 LayoutInflater inflater = (LayoutInflater) requireContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 View toastView = inflater.inflate(R.layout.custom_toast_error, null);
@@ -167,47 +149,73 @@ public class HomeScreenFragment extends Fragment {
             }
             toast.show();
         });
+
+        // Создаём контроллеры автоперелистывания
+        mainPagerController = new EdgeAutoScrollController(
+                viewPager,
+                () -> adapter != null ? adapter.getItemCount() : 0,
+                leftEdgeIndicator,
+                rightEdgeIndicator
+        );
+
+        favoritesPagerController = new EdgeAutoScrollController(
+                favoritesViewPager,
+                () -> favoritesAdapter != null ? favoritesAdapter.getItemCount() : 0,
+                leftFavIndicator,
+                rightFavIndicator
+        );
+
+        // Настройка drag-and-drop
+        setupDragAndDrop();
+        setupFavoritesDragAndDrop();
+
+        // Подписка на состояние drag (для синхронизации с ViewModel)
+        viewModel.isDragging().observe(getViewLifecycleOwner(), dragging -> {
+            isDragging = dragging;
+            if (!dragging) {
+                // Если drag завершён внешне (например, через ViewModel), сбрасываем контроллеры
+                mainPagerController.onDragEnded();
+                favoritesPagerController.onDragEnded();
+                highlightHelper.clear();
+            }
+        });
+
+        // Подписка на направление края (приходит из AppAdapter через dragEdgeListener)
+        viewModel.getDragEdge().observe(getViewLifecycleOwner(), direction ->
+                mainPagerController.onDragDirectionChanged(direction)
+        );
     }
 
+    // ----- Основной drag-and-drop (рабочий стол) -----
     private void setupDragAndDrop() {
         homeFragmentLayout.setOnDragListener((v, event) -> {
             switch (event.getAction()) {
                 case DragEvent.ACTION_DRAG_STARTED:
-                    Log.d("screen", "started");
+                    Log.d("HomeDrag", "started");
                     isDragging = true;
-                    currentPageDuringDrag = viewPager.getCurrentItem();
-                    totalPagesDuringDrag = adapter.getItemCount();
-                    updateEdgeIndicators(currentPageDuringDrag);
+                    mainPagerController.onDragStarted();
                     return true;
 
                 case DragEvent.ACTION_DRAG_LOCATION:
-                    Log.d("screen", "location");
                     if (!isDragging) return true;
                     float x = event.getX();
                     float y = event.getY();
 
                     // Подсветка элемента под курсором
-//                    handleHighlight(x, y);
+                    handleHighlight(x, y);
 
-                    // Автоперелистывание при приближении к краю
-                    int containerWidth = homeFragmentLayout.getWidth();
-                    int edgeThreshold = (int) (50 * getResources().getDisplayMetrics().density);
-                    if (x < edgeThreshold && currentPageDuringDrag > 0) {
-                        Log.d("direction","Left");
-                        schedulePageFlip(currentPageDuringDrag - 1);
-                    } else if (x > containerWidth - edgeThreshold && currentPageDuringDrag < totalPagesDuringDrag - 1) {
-                        Log.d("direction","Right");
-                        schedulePageFlip(currentPageDuringDrag + 1);
-                    } else {
-                        cancelPageFlip();
-                    }
+                    // Автоперелистывание
+                    float containerWidth = homeFragmentLayout.getWidth();
+                    float edgeThresholdPx = EdgeAutoScrollController.DEFAULT_EDGE_THRESHOLD_DP
+                            * getResources().getDisplayMetrics().density;
+                    mainPagerController.onDragLocation(x, containerWidth, edgeThresholdPx);
                     return true;
 
                 case DragEvent.ACTION_DROP:
-                    Log.d("screen", "drop");
+                    Log.d("HomeDrag", "drop");
+                    // Проверяем, не попал ли дроп на панель избранного
                     float dropX = event.getX();
                     float dropY = event.getY();
-                    // Проверяем, не попал ли дроп на панель избранного
                     int[] favLocation = new int[2];
                     favoritesViewPager.getLocationOnScreen(favLocation);
                     int[] parentLocation = new int[2];
@@ -216,23 +224,22 @@ public class HomeScreenFragment extends Fragment {
                     float relativeY = dropY + parentLocation[1] - favLocation[1];
                     if (relativeX >= 0 && relativeX <= favoritesViewPager.getWidth() &&
                             relativeY >= 0 && relativeY <= favoritesViewPager.getHeight()) {
-                        // Дроп на панели избранного – не обрабатываем здесь, пусть идёт дальше
+                        // Дроп на панель избранного – не обрабатываем здесь, пусть идёт дальше
                         return false;
                     }
-                    // Иначе обрабатываем дроп на рабочем столе
+                    // Обрабатываем дроп на рабочем столе
                     isDragging = false;
-                    cancelPageFlip();
-                    clearChildHighlight();
-                    handleDrop(event); // нужно реализовать
+                    mainPagerController.onDragEnded();
+                    highlightHelper.clear();
+                    handleDrop(event);
                     return true;
 
                 case DragEvent.ACTION_DRAG_ENDED:
                 case DragEvent.ACTION_DRAG_EXITED:
-                    Log.d("screen", "exited");
+                    Log.d("HomeDrag", "ended/exited");
                     isDragging = false;
-                    cancelPageFlip();
-                    clearChildHighlight();
-                    hideAllEdgeIndicators();
+                    mainPagerController.onDragEnded();
+                    highlightHelper.clear();
                     return true;
 
                 default:
@@ -241,15 +248,48 @@ public class HomeScreenFragment extends Fragment {
         });
     }
 
+    // ----- Drag-and-drop избранного -----
+    private void setupFavoritesDragAndDrop() {
+        favoritesViewPager.setOnDragListener((v, event) -> {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    viewModel.setDragging(true);
+                    favoritesPagerController.onDragStarted();
+                    return true;
+
+                case DragEvent.ACTION_DRAG_ENDED:
+                case DragEvent.ACTION_DRAG_EXITED:
+                    viewModel.setDragging(false);
+                    favoritesPagerController.onDragEnded();
+                    return true;
+
+                default:
+                    return false;
+            }
+        });
+    }
+
+    // Методы, вызываемые из FavoritesPageFragment
+    public void onFavoritesDragLocation(float x, float y) {
+        float containerWidth = favoritesViewPager.getWidth();
+        float edgeThresholdPx = EdgeAutoScrollController.DEFAULT_EDGE_THRESHOLD_DP
+                * getResources().getDisplayMetrics().density;
+        favoritesPagerController.onDragLocation(x, containerWidth, edgeThresholdPx);
+    }
+
+    public void onFavoritesDragEnd() {
+        favoritesPagerController.onDragEnded();
+    }
+
+    // ----- Вспомогательные методы -----
+
     private void handleHighlight(float x, float y) {
-        Log.d("handleHighlight", "Called");
         Fragment currentFragment = getChildFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
         if (!(currentFragment instanceof HomePageFragment)) return;
 
         RecyclerView recyclerView = ((HomePageFragment) currentFragment).getRecyclerView();
         if (recyclerView == null) return;
 
-        // Преобразуем координаты из homeFragmentLayout в систему координат RecyclerView
         int[] parentLocation = new int[2];
         homeFragmentLayout.getLocationOnScreen(parentLocation);
         int[] recyclerLocation = new int[2];
@@ -259,14 +299,10 @@ public class HomeScreenFragment extends Fragment {
         float recyclerY = y + parentLocation[1] - recyclerLocation[1];
 
         View child = recyclerView.findChildViewUnder(recyclerX, recyclerY);
-        highlightChild(child);
+        highlightHelper.highlight(child);
     }
 
     private void handleDrop(DragEvent event) {
-        isDragging = false;
-        cancelPageFlip();
-        clearChildHighlight();
-
         ClipData clipData = event.getClipData();
         DragEventData data = DragDataHelper.parse(clipData);
         if (data == null) return;
@@ -274,9 +310,7 @@ public class HomeScreenFragment extends Fragment {
         float x = event.getX();
         float y = event.getY();
 
-        // Определяем текущую страницу ViewPager, на которую происходит дроп
         int currentPage = viewPager.getCurrentItem();
-
         Fragment currentFragment = getChildFragmentManager().findFragmentByTag("f" + currentPage);
         if (!(currentFragment instanceof HomePageFragment)) return;
 
@@ -305,7 +339,8 @@ public class HomeScreenFragment extends Fragment {
             case APPS:
                 viewModel.addShortcutToDesktop(
                         new AppShortcut(data.getPackageName(), data.getAppName(), null),
-                        currentPage, targetRow, targetCol);
+                        currentPage, targetRow, targetCol
+                );
                 break;
             case HOME:
                 viewModel.moveShortcut(data.getPage(), data.getRow(), data.getCol(),
@@ -315,201 +350,6 @@ public class HomeScreenFragment extends Fragment {
                 viewModel.swapShortcutWithFavoriteAndHome(currentPage, targetRow, targetCol,
                         data.getPage(), data.getPosition());
                 break;
-        }
-    }
-
-    private void highlightChild(View child) {
-        // Если это тот же самый элемент – ничего не делаем
-        if (highlightedView == child) return;
-
-        // Снимаем подсветку с предыдущего
-        clearChildHighlight();
-
-        if (child != null) {
-            child.setBackgroundResource(R.drawable.highlight_border);
-            highlightedView = child;
-        }
-    }
-
-    private void clearChildHighlight() {
-        if (highlightedView != null) {
-            highlightedView.setBackground(null);
-            highlightedView = null;
-        }
-    }
-
-    // ----- Методы для индикаторов краёв (ваши, без изменений) -----
-    private void updateEdgeIndicators(int currentPage) {
-        if (!isDragging) {
-            hideAllEdgeIndicators();
-            return;
-        }
-        animateIndicatorVisibility(leftEdgeIndicator, currentPage > 0);
-        animateIndicatorVisibility(rightEdgeIndicator, currentPage < totalPagesDuringDrag - 1);
-    }
-
-    private void hideAllEdgeIndicators() {
-        animateIndicatorVisibility(leftEdgeIndicator, false);
-        animateIndicatorVisibility(rightEdgeIndicator, false);
-    }
-
-    private void animateIndicatorVisibility(View indicator, boolean show) {
-        if (show) {
-            if (indicator.getVisibility() != View.VISIBLE) {
-                indicator.setAlpha(0f);
-                indicator.setVisibility(View.VISIBLE);
-                indicator.animate().alpha(1f).setDuration(80).start();
-            }
-        } else {
-            if (indicator.getVisibility() == View.VISIBLE) {
-                indicator.animate().alpha(0f).setDuration(80).withEndAction(() ->
-                        indicator.setVisibility(View.GONE)).start();
-            }
-        }
-    }
-
-    private int scheduledTargetPage = -1;
-
-    private void schedulePageFlip(int targetPage) {
-        if (scheduledTargetPage == targetPage) return;
-        cancelPageFlip();
-        scheduledTargetPage = targetPage;
-        pageFlipRunnable = () -> {
-            viewPager.setCurrentItem(targetPage, true);
-            currentPageDuringDrag = targetPage;   // обновляем текущую страницу
-            scheduledTargetPage = -1;
-            updateEdgeIndicators(targetPage);
-        };
-        handler.postDelayed(pageFlipRunnable, 300);
-    }
-
-    private void cancelPageFlip() {
-        if (pageFlipRunnable != null) {
-            handler.removeCallbacks(pageFlipRunnable);
-            pageFlipRunnable = null;
-            scheduledTargetPage = -1;
-        }
-    }
-
-
-    private void setupFavoritesDragAndDrop() {
-        favoritesViewPager.setOnDragListener((v, event) -> {
-            switch (event.getAction()) {
-                case DragEvent.ACTION_DRAG_STARTED:
-                    isFavDragging = true;
-                    viewModel.setDragging(true);
-                    updateFavIndicators(favoritesViewPager.getCurrentItem());
-                    return true;
-                case DragEvent.ACTION_DRAG_ENDED:
-                    isFavDragging = false;
-                    cancelFavPageFlip();
-                    hideAllFavIndicators();
-                    return true;
-                default: return false;
-            }
-        });
-    }
-
-    private Handler favHandler = new Handler();
-    private Runnable favFlipRunnable;
-    private void updateFavIndicators(int currentPage) {
-        boolean hasLeft = currentPage > 0;
-        boolean hasRight = currentPage < favoritesAdapter.getItemCount() - 1;
-        animateIndicatorVisibility(leftFavIndicator, hasLeft);
-        animateIndicatorVisibility(rightFavIndicator, hasRight);
-    }
-    private void hideAllFavIndicators() {
-        animateIndicatorVisibility(leftFavIndicator, false);
-        animateIndicatorVisibility(rightFavIndicator, false);
-    }
-
-    // Публичные методы, вызываемые из дочернего FavoritesPageFragment
-    public void onFavoritesDragLocation(float x, float y) {
-        int width = favoritesViewPager.getWidth();
-        int threshold = (int) (50 * getResources().getDisplayMetrics().density);
-        int currentPage = favoritesViewPager.getCurrentItem();
-        int totalPages = favoritesAdapter.getItemCount();
-
-        Log.d("FavAutoScroll", "x=" + x + ", width=" + width + ", threshold=" + threshold + ", currentPage=" + currentPage + ", totalPages=" + totalPages);
-
-        if (x < threshold && currentPage > 0) {
-            scheduleFavPageFlip(currentPage - 1);
-        } else if (x > width - threshold && currentPage < totalPages - 1) {
-            scheduleFavPageFlip(currentPage + 1);
-        } else {
-            cancelFavPageFlip();
-        }
-    }
-
-    public void onFavoritesDragEnd() {
-        cancelFavPageFlip();
-        hideAllFavIndicators();
-    }
-
-    private int scheduledFavTargetPage = -1;
-
-
-    // Обновлённые методы для планирования перелистывания (можно оставить как есть)
-    private void scheduleFavPageFlip(int targetPage) {
-        if (scheduledFavTargetPage == targetPage) return;
-        cancelFavPageFlip();
-        scheduledFavTargetPage = targetPage;
-        favFlipRunnable = () -> {
-            favoritesViewPager.setCurrentItem(targetPage, true);
-            favFlipRunnable = null;
-            scheduledFavTargetPage = -1;
-            updateFavIndicators(targetPage);
-        };
-        favHandler.postDelayed(favFlipRunnable, 300);
-    }
-
-    private void cancelFavPageFlip() {
-        if (favFlipRunnable != null) {
-            favHandler.removeCallbacks(favFlipRunnable);
-            favFlipRunnable = null;
-            scheduledFavTargetPage = -1;
-        }
-    }
-
-    private void handleDropOnFavorites(DragEvent event) {
-        ClipData data = event.getClipData();
-        if (data == null) return;
-        String text = data.getItemAt(0).getText().toString();
-        String[] parts = text.split(":");
-
-        // Получаем текущий фрагмент избранного
-        int targetPage = favoritesViewPager.getCurrentItem();
-        Fragment currentFavFragment = getChildFragmentManager().findFragmentByTag("f" + targetPage);
-        if (!(currentFavFragment instanceof FavoritesPageFragment)) return;
-
-        RecyclerView rv = ((FavoritesPageFragment) currentFavFragment).getRecyclerView();
-        if (rv == null) return;
-
-        // Преобразуем координаты из favoritesViewPager в координаты RecyclerView
-        int[] favLocation = new int[2];
-        favoritesViewPager.getLocationOnScreen(favLocation);
-        int[] rvLocation = new int[2];
-        rv.getLocationOnScreen(rvLocation);
-        float rvX = event.getX() + favLocation[0] - rvLocation[0];
-        float rvY = event.getY() + favLocation[1] - rvLocation[1];
-
-        View targetView = rv.findChildViewUnder(rvX, rvY);
-        if (targetView == null) return;
-
-        int targetPos = rv.getChildAdapterPosition(targetView);
-        if (targetPos == RecyclerView.NO_POSITION) return;
-
-        if (parts.length == 2) {
-            // Перемещение внутри избранного
-            int fromPage = Integer.parseInt(parts[0]);
-            int fromPos = Integer.parseInt(parts[1]);
-            viewModel.swapFavorites(fromPage, fromPos, targetPage, targetPos);
-        } else if (parts.length == 3) {
-            // Перемещение с рабочего стола в избранное
-            int fromPage = Integer.parseInt(parts[0]);
-            int fromRow = Integer.parseInt(parts[1]);
-            int fromCol = Integer.parseInt(parts[2]);
-            viewModel.swapShortcutWithFavoriteAndHome(fromPage, fromRow, fromCol, targetPage, targetPos);
         }
     }
 
@@ -534,9 +374,12 @@ public class HomeScreenFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         viewModel.setDragging(false);
-        handler.removeCallbacksAndMessages(null);
+        mainPagerController.onDragEnded();
+        favoritesPagerController.onDragEnded();
+        highlightHelper.clear();
     }
 
     public void openAllApps() {
+        // заглушка
     }
 }

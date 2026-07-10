@@ -22,19 +22,21 @@ import ru.veritas.veritas_ui.ui.R;
 import ru.veritas.veritas_ui.core.entities.AppShortcut;
 import ru.veritas.veritas_ui.core.command.local.LaunchAppUseCase;
 import ru.veritas.veritas_ui.core.command.local.home.GetAppIconUseCase;
+import ru.veritas.veritas_ui.ui.common.utils.DragHighlightHelper;
+import ru.veritas.veritas_ui.ui.common.utils.EdgeAutoScrollController;
 import ru.veritas.veritas_ui.ui.common.utils.ToDoubleListUtils;
 
 public class HomePageFragment extends Fragment {
     private static final String ARG_PAGE_INDEX = "page_index";
     private static final String ARG_COLUMN_COUNT = "column_count";
 
-    // Порог края в dp — должен совпадать с AppAdapter
-    private static final int EDGE_THRESHOLD_DP = 64;
+    // Порог края в dp — единое значение, см. EdgeAutoScrollController.DEFAULT_EDGE_THRESHOLD_DP
+    private static final int EDGE_THRESHOLD_DP = EdgeAutoScrollController.DEFAULT_EDGE_THRESHOLD_DP;
 
     private RecyclerView recyclerView;
     private AppAdapter adapter;
     private ViewPagerPagesAdapter.OnItemClickListener listener;
-    private View highlightedView = null;
+    private final DragHighlightHelper highlightHelper = new DragHighlightHelper(R.drawable.highlight_border);
 
     private int computedItemHeight = 0;          // вычисленная высота ячейки
     private boolean needsHeightRecalculation = true;
@@ -177,16 +179,7 @@ public class HomePageFragment extends Fragment {
                     float x = event.getX();
                     float y = event.getY();
                     View child = recyclerView.findChildViewUnder(x, y);
-                    if (child != null) {
-                        if (highlightedView != child) {
-                            clearHighlight();
-                            Log.d("page", "location");
-                            child.setBackgroundResource(R.drawable.highlight_border);
-                            highlightedView = child;
-                        }
-                    } else {
-                        clearHighlight();
-                    }
+                    highlightHelper.highlight(child);
 
                     int[] recyclerLocation = new int[2];
                     recyclerView.getLocationOnScreen(recyclerLocation);
@@ -195,14 +188,7 @@ public class HomePageFragment extends Fragment {
                     float screenWidth = getResources().getDisplayMetrics().widthPixels;
                     float edgePx = EDGE_THRESHOLD_DP * getResources().getDisplayMetrics().density;
 
-                    int direction;
-                    if (absX < edgePx) {
-                        direction = -1;   // левый край
-                    } else if (absX > screenWidth - edgePx) {
-                        direction = 1;    // правый край
-                    } else {
-                        direction = 0;
-                    }
+                    int direction = EdgeAutoScrollController.computeDirection(absX, screenWidth, edgePx);
                     viewModel.setDragEdge(direction);
                     return true;
                 }
@@ -211,7 +197,7 @@ public class HomePageFragment extends Fragment {
                 case DragEvent.ACTION_DROP: {
                     Log.d("page", "drop");
                     viewModel.setDragEdge(0);
-                    clearHighlight();
+                    highlightHelper.clear();
                     ClipData clipData = event.getClipData();
                     if (clipData != null && clipData.getItemCount() > 0) {
                         String data = clipData.getItemAt(0).getText().toString();
@@ -260,26 +246,20 @@ public class HomePageFragment extends Fragment {
                     Log.d("page","ended");
                     viewModel.setDragEdge(0);
                     viewModel.setDragging(false);
-                    clearHighlight();
+                    highlightHelper.clear();
                     return true;
 
                 case DragEvent.ACTION_DRAG_EXITED:
                     Log.d("page","exited");
                     viewModel.setDragEdge(0);
                     // viewModel.setDragging(false);
-                    clearHighlight();
+                    highlightHelper.clear();
                     return true;
 
                 default:
                     return false;
             }
         });
-    }
-    private void clearHighlight() {
-        if (highlightedView != null) {
-            highlightedView.setBackground(null);
-            highlightedView = null;
-        }
     }
 
     public RecyclerView getRecyclerView() {
