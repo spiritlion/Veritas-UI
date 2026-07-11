@@ -40,6 +40,9 @@ android {
 }
 
 dependencies {
+    implementation(project(":data"))
+    implementation(project(":core"))
+    implementation(project(":ui"))
 
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -47,8 +50,10 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.core.ktx)
     implementation(libs.gson)
+    implementation(libs.lifecycle.viewmodel.savedstate)
+
     testImplementation(libs.junit)
+
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation(libs.lifecycle.viewmodel.savedstate)
 }

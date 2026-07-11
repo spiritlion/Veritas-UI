@@ -21,4 +21,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "Veritas UI"
 include(":app")
- 
+include(":core")
+include(":data")
+include(":ui")
