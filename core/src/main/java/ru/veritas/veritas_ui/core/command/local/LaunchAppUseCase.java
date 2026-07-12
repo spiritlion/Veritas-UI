@@ -1,5 +1,6 @@
 package ru.veritas.veritas_ui.core.command.local;
 
+import ru.veritas.veritas_ui.core.exceptions.AppLaunchException;
 import ru.veritas.veritas_ui.core.loaders.AppLauncher;
 
 public class LaunchAppUseCase {
@@ -7,7 +8,7 @@ public class LaunchAppUseCase {
     public LaunchAppUseCase(AppLauncher launcher) {
         this.launcher = launcher;
     }
-    public void invoke(String packageName) {
+    public void invoke(String packageName) throws AppLaunchException {
         launcher.launch(packageName);
     }
 }

@@ -2,6 +2,7 @@ package ru.veritas.veritas_ui.core.command;
 
 import ru.veritas.veritas_ui.core.command.local.GetInstalledAppsUseCase;
 import ru.veritas.veritas_ui.core.command.local.LaunchAppUseCase;
+import ru.veritas.veritas_ui.core.command.local.UninstallAppUseCase;
 import ru.veritas.veritas_ui.core.command.local.home.AddShortcutToDesktopCommand;
 import ru.veritas.veritas_ui.core.command.local.home.AddShortcutToFirstFreeCellCommand;
 import ru.veritas.veritas_ui.core.command.local.home.GetAppIconUseCase;
@@ -51,11 +52,14 @@ public interface CommandFactory {
         GetInstalledAppsUseCase getGetInstalledAppUseCase();
 
         LaunchAppUseCase getLaunchAppUseCase();
+        LaunchAppUseCase getOpenAppInfoUseCase();
 
         GetShortcutsUseCase getGetShortcutsUseCase();
 
         GetFavoritesUseCase getGetFavoritesUseCase();
 
         GetAppIconUseCase getGetAppIconUseCase();
+
+        UninstallAppUseCase getUninstallAppUseCase();
     }
 }

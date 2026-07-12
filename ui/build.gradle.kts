@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.library)
-    // TODO: доделать
 }
 
 android {

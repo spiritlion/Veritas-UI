@@ -12,6 +12,8 @@ import java.util.concurrent.Executors;
 import ru.veritas.veritas_ui.core.command.Command;
 import ru.veritas.veritas_ui.core.command.CommandFactory;
 import ru.veritas.veritas_ui.core.entities.AppShortcut;
+import ru.veritas.veritas_ui.core.exceptions.AppLaunchException;
+import ru.veritas.veritas_ui.core.exceptions.AppUninstallException;
 import ru.veritas.veritas_ui.ui.common.view.ToastData;
 
 public class HomeViewModel extends ViewModel {
@@ -89,7 +91,21 @@ public class HomeViewModel extends ViewModel {
 
     // --- Запуск приложения ---
     public void launchApp(String packageName) {
-        useCaseFactory.getLaunchAppUseCase().invoke(packageName);
+        try {
+            useCaseFactory.getLaunchAppUseCase().invoke(packageName);
+        } catch (AppLaunchException e) {
+            toastMessage.postValue(
+                    ToastData.error(e.getMessage())
+            );
+        }
+    }
+
+    public void openInfoApp(String packageName) {
+        try {
+            useCaseFactory.getOpenAppInfoUseCase().invoke(packageName);
+        } catch (AppLaunchException e) {
+            toastMessage.postValue(ToastData.error(e.getMessage()));
+        }
     }
 
     // ---- Вспомогательные методы ----
@@ -134,5 +150,13 @@ public class HomeViewModel extends ViewModel {
     protected void onCleared() {
         executor.shutdown();
         super.onCleared();
+    }
+
+    public void uninstallApp(String packageName) {
+        try {
+            useCaseFactory.getUninstallAppUseCase().invoke(packageName);
+        } catch (AppUninstallException e) {
+            toastMessage.postValue(ToastData.error(e.getMessage()));
+        }
     }
 }

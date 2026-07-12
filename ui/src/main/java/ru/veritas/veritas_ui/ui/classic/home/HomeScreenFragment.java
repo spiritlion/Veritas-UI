@@ -26,7 +26,6 @@ import ru.veritas.veritas_ui.core.command.CommandFactory;
 import ru.veritas.veritas_ui.core.entities.AppShortcut;
 import ru.veritas.veritas_ui.core.entities.DragEventData;
 import ru.veritas.veritas_ui.ui.R;
-import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesPageFragment;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesViewPagerAdapter;
 import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 import ru.veritas.veritas_ui.ui.common.utils.DragHighlightHelper;
@@ -110,9 +109,10 @@ public class HomeScreenFragment extends Fragment {
                 if (adapter == null) {
                     adapter = new ViewPagerPagesAdapter(
                             createClickListener(),
+                            createMenuClickListener(),
                             requireActivity(),
                             useCaseFactory.getGetAppIconUseCase(),
-                            useCaseFactory.getLaunchAppUseCase(),
+                            useCaseFactory.getOpenAppInfoUseCase(),
                             4
                     );
                     adapter.setPagesData(apps);
@@ -366,6 +366,26 @@ public class HomeScreenFragment extends Fragment {
                 viewModel.setDragging(true);
                 ClipData dragData = DragDataHelper.createHomeShortcutDragData(page, row, col);
                 v.startDragAndDrop(dragData, new View.DragShadowBuilder(v), null, 0);
+            }
+        };
+    }
+
+    private ViewPagerPagesAdapter.OnItemMenuClickListener createMenuClickListener() {
+        return new ViewPagerPagesAdapter.OnItemMenuClickListener() {
+
+            @Override
+            public void onDeleteClick(int page, int row, int col) {
+                viewModel.addShortcutToDesktop(null, page, row, col);
+            }
+
+            @Override
+            public void onUninstallClick(String packageName) {
+                viewModel.uninstallApp(packageName);
+            }
+
+            @Override
+            public void onInfoClick(String packageName) {
+                viewModel.openInfoApp(packageName);
             }
         };
     }

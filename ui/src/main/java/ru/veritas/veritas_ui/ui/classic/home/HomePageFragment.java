@@ -36,6 +36,7 @@ public class HomePageFragment extends Fragment {
     private RecyclerView recyclerView;
     private AppAdapter adapter;
     private ViewPagerPagesAdapter.OnItemClickListener listener;
+    private ViewPagerPagesAdapter.OnItemMenuClickListener menuListener;
     private final DragHighlightHelper highlightHelper = new DragHighlightHelper(R.drawable.highlight_border);
 
     private int computedItemHeight = 0;          // вычисленная высота ячейки
@@ -43,17 +44,17 @@ public class HomePageFragment extends Fragment {
     private ViewTreeObserver.OnGlobalLayoutListener layoutListener;
 
     private final GetAppIconUseCase getAppIconUseCase;
-    private final LaunchAppUseCase launchAppUseCase;
+    private final LaunchAppUseCase openAppInfoUseCase;
 
-    public HomePageFragment(GetAppIconUseCase getAppIconUseCase, LaunchAppUseCase launchAppUseCase) {
+    public HomePageFragment(GetAppIconUseCase getAppIconUseCase, LaunchAppUseCase openAppInfoUseCase) {
         this.getAppIconUseCase = getAppIconUseCase;
-        this.launchAppUseCase = launchAppUseCase;
+        this.openAppInfoUseCase = openAppInfoUseCase;
     }
 
     public static HomePageFragment newInstance(int pageIndex, int columnCount,
                                                GetAppIconUseCase getAppIconUseCase,
-                                               LaunchAppUseCase launchAppUseCase) {
-        HomePageFragment fragment = new HomePageFragment(getAppIconUseCase, launchAppUseCase);
+                                               LaunchAppUseCase openAppInfoUseCase) {
+        HomePageFragment fragment = new HomePageFragment(getAppIconUseCase, openAppInfoUseCase);
         Bundle args = new Bundle();
         args.putInt(ARG_PAGE_INDEX, pageIndex);
         args.putInt(ARG_COLUMN_COUNT, columnCount);
@@ -61,8 +62,9 @@ public class HomePageFragment extends Fragment {
         return fragment;
     }
 
-    public void setOnItemClickListener(ViewPagerPagesAdapter.OnItemClickListener listener) {
+    public void setOnItemClickListener(ViewPagerPagesAdapter.OnItemClickListener listener, ViewPagerPagesAdapter.OnItemMenuClickListener menuListener) {
         this.listener = listener;
+        this.menuListener = menuListener;
         if (adapter != null) {
             adapter.setListener(listener);
         }
@@ -88,7 +90,7 @@ public class HomePageFragment extends Fragment {
 
         HomeViewModel viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
 
-        adapter = new AppAdapter(null, getAppIconUseCase, launchAppUseCase, listener, pageIndex, columnCount);
+        adapter = new AppAdapter(null, getAppIconUseCase, listener, menuListener, pageIndex, columnCount);
 
         adapter.setDragDropListener((fromPage, fromRow, fromCol,
                                      targetPage, targetRow, targetCol) ->

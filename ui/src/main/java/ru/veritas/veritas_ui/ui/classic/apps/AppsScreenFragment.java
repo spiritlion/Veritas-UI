@@ -92,7 +92,23 @@ public class AppsScreenFragment extends Fragment implements AppsAdapter.DragStar
     // Только фрагмент установки адаптера, остальной код без изменений
     private void setupRecyclerView() {
         // === DI: получаем GetAppIconUseCase из контейнера ===
-        adapter = new AppsAdapter(app -> viewModel.launchApp(app.getPackageName()), useCaseFactory.getGetAppIconUseCase());
+        adapter = new AppsAdapter(
+                app -> viewModel.launchApp(
+                        app.getPackageName()
+                ),
+                useCaseFactory.getGetAppIconUseCase(),
+                new AppsAdapter.OnItemMenuListener() {
+                    @Override
+                    public void onInfoClick(String packageName) {
+                        viewModel.openInfoApp(packageName);
+                    }
+
+                    @Override
+                    public void onDeleteClick(String packageName) {
+                        viewModel.uninstallApp(packageName);
+                    }
+                }
+        );
 
         recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 4));
         recyclerView.setAdapter(adapter);

@@ -7,8 +7,10 @@ import ru.veritas.veritas_ui.core.navigators.Navigator;
 import ru.veritas.veritas_ui.core.repositories.SettingsRepository;
 import ru.veritas.veritas_ui.data.command.CommandFactoryImpl;
 import ru.veritas.veritas_ui.data.dto.AppInfoDto;
+import ru.veritas.veritas_ui.data.loaders.AndroidAppInfoLauncher;
 import ru.veritas.veritas_ui.data.loaders.AndroidAppLauncher;
 import ru.veritas.veritas_ui.data.datasource.local.PackageManagerDataSource;
+import ru.veritas.veritas_ui.data.loaders.AndroidAppUninstaller;
 import ru.veritas.veritas_ui.data.mappers.AppShortcutMapperDto;
 import ru.veritas.veritas_ui.data.repositories.AppRepositoryImpl;
 import ru.veritas.veritas_ui.data.repositories.FavoritesRepositoryImpl;
@@ -45,12 +47,17 @@ public class DependencyContainer {
 
         navigator = new NavigatorImpl(context);
         AndroidAppLauncher appLauncher = new AndroidAppLauncher(context);
+        AndroidAppInfoLauncher appInfoLauncher = new AndroidAppInfoLauncher(context);
+        AndroidAppUninstaller appUninstaller = new AndroidAppUninstaller(context);
+
         commandFactory = new CommandFactoryImpl(
                 appRepository,
                 homeRepository,
                 favoritesRepository,
                 navigator,
                 appLauncher,
+                appInfoLauncher,
+                appUninstaller,
                 pm
         );
     }

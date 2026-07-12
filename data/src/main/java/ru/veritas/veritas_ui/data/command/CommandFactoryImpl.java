@@ -7,6 +7,7 @@ import java.util.List;
 import ru.veritas.veritas_ui.core.command.CommandFactory;
 import ru.veritas.veritas_ui.core.command.local.GetInstalledAppsUseCase;
 import ru.veritas.veritas_ui.core.command.local.LaunchAppUseCase;
+import ru.veritas.veritas_ui.core.command.local.UninstallAppUseCase;
 import ru.veritas.veritas_ui.core.command.local.home.AddShortcutToDesktopCommand;
 import ru.veritas.veritas_ui.core.command.local.home.AddShortcutToFirstFreeCellCommand;
 import ru.veritas.veritas_ui.core.command.local.home.GetAppIconUseCase;
@@ -23,6 +24,7 @@ import ru.veritas.veritas_ui.core.command.local.home.favorites.SwapFavoritesComm
 import ru.veritas.veritas_ui.core.command.local.settings.OpenSettingsUseCase;
 import ru.veritas.veritas_ui.core.entities.AppShortcut;
 import ru.veritas.veritas_ui.core.loaders.AppLauncher;
+import ru.veritas.veritas_ui.core.loaders.AppUninstaller;
 import ru.veritas.veritas_ui.core.loaders.IconLoader;
 import ru.veritas.veritas_ui.core.navigators.Navigator;
 import ru.veritas.veritas_ui.core.repositories.AppRepository;
@@ -41,6 +43,8 @@ public class CommandFactoryImpl implements CommandFactory {
     private final UseCase useCase;   // один экземпляр, создаётся в конструкторе
     public final Navigator navigator;
     public final AppLauncher appLauncher;
+    public final AppLauncher appInfoLauncher;
+    public final AppUninstaller uninstaller;
     private final PackageManager pm;
 
 
@@ -48,12 +52,15 @@ public class CommandFactoryImpl implements CommandFactory {
                               HomeRepository homeRepository,
                               FavoritesRepository favoritesRepository,
                               Navigator navigator, AppLauncher appLauncher,
+                              AppLauncher appInfoLauncher, AppUninstaller uninstaller,
                               PackageManager pm) {
         this.appRepository = appRepository;
         this.homeRepository = homeRepository;
         this.favoritesRepository = favoritesRepository;
         this.navigator = navigator;
         this.appLauncher = appLauncher;
+        this.appInfoLauncher = appInfoLauncher;
+        this.uninstaller = uninstaller;
         this.pm = pm;
         this.useCase = new UseCases();
     }
@@ -140,25 +147,29 @@ public class CommandFactoryImpl implements CommandFactory {
     }
     class Settings implements CommandFactory.Settings { }
     @Override
-    public CommandFactory.UseCase getUseCaseFactory() {
+    public UseCase getUseCaseFactory() {
         return useCase;
     }
     // Вложенный класс – теперь неизменяемый
-    private class UseCases implements CommandFactory.UseCase {
+    private class UseCases implements UseCase {
         private final OpenSettingsUseCase openSettingsUseCase;
         private final GetInstalledAppsUseCase getInstalledAppsUseCase;
         private final LaunchAppUseCase launchAppUseCase;
+        private final LaunchAppUseCase openAppInfoUseCase;
         private final GetShortcutsUseCase getShortcutsUseCase;
         private final GetFavoritesUseCase getFavoritesUseCase;
         private final GetAppIconUseCase getAppIconUseCase;
+        private final UninstallAppUseCase uninstallAppUseCase;
 
         public UseCases() {
             // 1. Простые use case
             this.openSettingsUseCase = new OpenSettingsUseCase(navigator);
             this.getInstalledAppsUseCase = new GetInstalledAppsUseCase(appRepository);
             this.launchAppUseCase = new LaunchAppUseCase(appLauncher);
+            this.openAppInfoUseCase = new LaunchAppUseCase(appInfoLauncher);
             this.getShortcutsUseCase = new GetShortcutsUseCase(homeRepository);
             this.getFavoritesUseCase = new GetFavoritesUseCase(favoritesRepository);
+            this.uninstallAppUseCase = new UninstallAppUseCase(uninstaller);
 
             // 2. Сложный GetAppIconUseCase (логика построения загрузчиков вынесена сюда же)
             IconLoader defaultLoader = new DefaultIconLoader(pm);
@@ -190,6 +201,11 @@ public class CommandFactoryImpl implements CommandFactory {
         }
 
         @Override
+        public LaunchAppUseCase getOpenAppInfoUseCase() {
+            return openAppInfoUseCase;
+        }
+
+        @Override
         public GetShortcutsUseCase getGetShortcutsUseCase() {
             return getShortcutsUseCase;
         }
@@ -202,6 +218,11 @@ public class CommandFactoryImpl implements CommandFactory {
         @Override
         public GetAppIconUseCase getGetAppIconUseCase() {
             return getAppIconUseCase;
+        }
+
+        @Override
+        public UninstallAppUseCase getUninstallAppUseCase() {
+            return uninstallAppUseCase;
         }
     }
 }

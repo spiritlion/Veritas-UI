@@ -18,7 +18,6 @@ import java.util.List;
 
 import ru.veritas.veritas_ui.ui.R;
 import ru.veritas.veritas_ui.core.entities.AppShortcut;
-import ru.veritas.veritas_ui.core.command.local.LaunchAppUseCase;
 import ru.veritas.veritas_ui.core.command.local.home.GetAppIconUseCase;
 import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 import ru.veritas.veritas_ui.ui.common.utils.IconUtils;
@@ -27,8 +26,8 @@ import ru.veritas.veritas_ui.ui.common.utils.LongPressDragTouchListener;
 public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     private List<AppShortcut> appsList;
     private ViewPagerPagesAdapter.OnItemClickListener listener;
+    private ViewPagerPagesAdapter.OnItemMenuClickListener menuListener;
     private final GetAppIconUseCase getAppIconUseCase;
-    private final LaunchAppUseCase launchAppUseCase;
     private int pageIndex;
     private int columnCount;
     private PopupMenu currentPopup;
@@ -45,13 +44,13 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     }
 
     public AppAdapter(List<AppShortcut> appsList, GetAppIconUseCase getAppIconUseCase,
-                      LaunchAppUseCase launchAppUseCase,
                       ViewPagerPagesAdapter.OnItemClickListener listener,
+                      ViewPagerPagesAdapter.OnItemMenuClickListener menuListener,
                       int pageIndex, int columnCount) {
         this.appsList = appsList;
         this.getAppIconUseCase = getAppIconUseCase;
-        this.launchAppUseCase = launchAppUseCase;
         this.listener = listener;
+        this.menuListener = menuListener;
         this.pageIndex = pageIndex;
         this.columnCount = columnCount;
     }
@@ -96,6 +95,8 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         // Клик, долгое нажатие (меню) и drag теперь обрабатывает один переиспользуемый
         // LongPressDragTouchListener — отдельный setOnClickListener больше не нужен,
         // т.к. обычный тап тоже приходит через onClick() колбэка.
+        int row = position / columnCount;
+        int col = position % columnCount;
         holder.app.setOnTouchListener(new LongPressDragTouchListener(new LongPressDragTouchListener.Callback() {
             @Override
             public void onClick() {
@@ -104,7 +105,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
 
             @Override
             public void onLongPress() {
-                showAppMenu(holder.app, app);
+                showAppMenu(holder.app, app, row, col);
             }
 
             @Override
@@ -117,8 +118,6 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
 
             @Override
             public ClipData createDragData() {
-                int row = position / columnCount;
-                int col = position % columnCount;
                 return DragDataHelper.createHomeShortcutDragData(pageIndex, row, col);
             }
         }));
@@ -144,7 +143,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         this.listener = listener;
     }
 
-    private void showAppMenu(View view, AppShortcut app) {
+    private void showAppMenu(View view, AppShortcut app, int row, int col) {
         if (currentPopup != null) {
             currentPopup.dismiss();
         }
@@ -153,10 +152,14 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.menu_item_uninstall) {
-                // TODO: удаление
-                return true;
+                if (menuListener != null) menuListener.onUninstallClick(app.getPackageName());
             } else if (id == R.id.menu_item_about) {
-                launchAppUseCase.invoke(app.getPackageName() + " ?info");
+                if (menuListener != null) menuListener.onInfoClick(app.getPackageName());
+                return true;
+            } else if (id == R.id.menu_item_delete) {
+                if (menuListener != null) {
+                    menuListener.onDeleteClick(pageIndex, row, col);
+                }
                 return true;
             }
             return false;

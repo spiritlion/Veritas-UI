@@ -10,7 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 import ru.veritas.veritas_ui.App;
-import ru.veritas.veritas_ui.R;
+
+import ru.veritas.veritas_ui.ui.R;
 import ru.veritas.veritas_ui.ui.common.ViewPagerHost;
 import ru.veritas.veritas_ui.di.DependencyContainer;
 import ru.veritas.veritas_ui.activity.settings.SettingsActivity;

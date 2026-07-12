@@ -27,6 +27,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
     private PopupMenu currentPopup;
     private List<AppShortcut> apps = new ArrayList<>();
     private final OnItemClickListener listener;
+    private final OnItemMenuListener menuListener;
     private DragStartListener dragStartListener;
 
     public interface OnItemClickListener {
@@ -37,10 +38,16 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
         void onDragStart(AppShortcut app, View view);
     }
 
+    public interface OnItemMenuListener {
+        void onInfoClick(String packageName);
+        void onDeleteClick(String packageName);
+    }
+
     // Теперь use case передаётся извне (из фрагмента)
-    public AppsAdapter(OnItemClickListener listener, GetAppIconUseCase getAppIconUseCase) {
+    public AppsAdapter(OnItemClickListener listener, GetAppIconUseCase getAppIconUseCase, OnItemMenuListener menuListener) {
         this.listener = listener;
         this.getAppIconUseCase = getAppIconUseCase;
+        this.menuListener = menuListener;
     }
 
     public void setDragStartListener(DragStartListener listener) {
@@ -93,14 +100,14 @@ public class AppsAdapter extends RecyclerView.Adapter<AppViewHolder> {
             currentPopup.dismiss();
         }
         PopupMenu popup = new PopupMenu(view.getContext(), view);
-        popup.getMenuInflater().inflate(R.menu.popup_app_menu, popup.getMenu());
+        popup.getMenuInflater().inflate(R.menu.popup_apps_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.menu_item_uninstall) {
-                // TODO: удаление
+                menuListener.onDeleteClick(app.getPackageName());
                 return true;
             } else if (id == R.id.menu_item_about) {
-                // TODO: информация
+                menuListener.onInfoClick(app.getPackageName());
                 return true;
             }
             return false;
