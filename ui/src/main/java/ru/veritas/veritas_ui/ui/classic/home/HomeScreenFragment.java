@@ -26,6 +26,8 @@ import ru.veritas.veritas_ui.core.command.CommandFactory;
 import ru.veritas.veritas_ui.core.entities.AppShortcut;
 import ru.veritas.veritas_ui.core.entities.DragEventData;
 import ru.veritas.veritas_ui.ui.R;
+import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesAdapter;
+import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesPageFragment;
 import ru.veritas.veritas_ui.ui.classic.home.favorites.FavoritesViewPagerAdapter;
 import ru.veritas.veritas_ui.ui.common.utils.DragDataHelper;
 import ru.veritas.veritas_ui.ui.common.utils.DragHighlightHelper;
@@ -87,12 +89,6 @@ public class HomeScreenFragment extends Fragment {
         favoritesViewPager = view.findViewById(R.id.favoritesViewPager);
         leftFavIndicator = view.findViewById(R.id.leftFavIndicator);
         rightFavIndicator = view.findViewById(R.id.rightFavIndicator);
-        favoritesAdapter = new FavoritesViewPagerAdapter(
-                this,
-                useCaseFactory.getGetAppIconUseCase(),
-                useCaseFactory.getOpenSettingsUseCase()
-        );
-        favoritesViewPager.setAdapter(favoritesAdapter);
         favoritesViewPager.setOffscreenPageLimit(2);
 
         // ViewModel
@@ -119,6 +115,20 @@ public class HomeScreenFragment extends Fragment {
                     viewPager.setAdapter(adapter);
                 } else {
                     adapter.setPagesData(apps);
+                }
+                List<List<AppShortcut>> favApps = ((HomeScreenState.Content) state).getFavApps();
+                if (favoritesAdapter == null) {
+                    favoritesAdapter = new FavoritesViewPagerAdapter(
+                            requireActivity(),
+                            useCaseFactory.getGetAppIconUseCase(),
+                            createFavListener(),
+                            createFavMenuListener(),
+                            createFavSpecificListener()
+                    );
+                    favoritesAdapter.setPages(favApps);
+                    favoritesViewPager.setAdapter(favoritesAdapter);
+                } else {
+                    favoritesAdapter.setPages(favApps);
                 }
             }
         });
@@ -281,6 +291,10 @@ public class HomeScreenFragment extends Fragment {
         favoritesPagerController.onDragEnded();
     }
 
+    public void onFavoritesDragEdge(int direction) {
+        favoritesPagerController.onDragDirectionChanged(direction);
+    }
+
     // ----- Вспомогательные методы -----
 
     private void handleHighlight(float x, float y) {
@@ -369,7 +383,6 @@ public class HomeScreenFragment extends Fragment {
             }
         };
     }
-
     private ViewPagerPagesAdapter.OnItemMenuClickListener createMenuClickListener() {
         return new ViewPagerPagesAdapter.OnItemMenuClickListener() {
 
@@ -386,6 +399,39 @@ public class HomeScreenFragment extends Fragment {
             @Override
             public void onInfoClick(String packageName) {
                 viewModel.openInfoApp(packageName);
+            }
+        };
+    }
+
+    private FavoritesAdapter.OnItemClickListener createFavListener() {
+        return new FavoritesAdapter.OnItemClickListener() {
+            @Override
+            public void OnItemClick(String packageName) {
+                viewModel.launchApp(packageName);
+            }
+            // TODO: Add onLongClick listener
+        };
+    }
+    private FavoritesAdapter.OnItemMenuClickListener createFavMenuListener() {
+        return new FavoritesAdapter.OnItemMenuClickListener() {
+
+            @Override
+            public void onRemoveClick(int page, int position) {
+                viewModel.removeFromFavorites(page, position);
+            }
+
+            @Override
+            public void onInfoClick(String packageName) {
+                viewModel.openInfoApp(packageName);
+            }
+        };
+    }
+    private FavoritesAdapter.OnSpecificItemClickListener createFavSpecificListener() {
+        return new FavoritesAdapter.OnSpecificItemClickListener() {
+
+            @Override
+            public void ItemClick() {
+                // TODO
             }
         };
     }

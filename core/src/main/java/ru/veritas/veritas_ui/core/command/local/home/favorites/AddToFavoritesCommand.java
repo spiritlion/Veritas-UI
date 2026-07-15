@@ -23,17 +23,7 @@ public class AddToFavoritesCommand extends NonUndoableCommand<Void> {
 
     @Override
     public Void execute() {
-        var pages = repository.getFavorites();
-        if (page >= pages.size()) {
-            // если такой страницы нет – создаём
-            while (pages.size() <= page) pages.add(new ArrayList<>());
-        }
-        var targetPage = pages.get(page);
-        if (position >= targetPage.size()) {
-            while (targetPage.size() <= position) targetPage.add(null);
-        }
-        targetPage.set(position, shortcut);
-        repository.saveFavorites(pages);
+        repository.addFavorite(page, position, shortcut);
         return null;
     }
 }

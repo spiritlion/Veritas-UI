@@ -19,6 +19,9 @@ import ru.veritas.veritas_ui.core.entities.AppShortcut;
 import ru.veritas.veritas_ui.core.repositories.FavoritesRepository;
 
 public class FavoritesRepositoryImpl implements FavoritesRepository {
+    private static final int PAGE_COUNT = 3;
+    private static final int ITEMS_PER_PAGE = 4;
+
     private final Context context;
 
     public FavoritesRepositoryImpl(Context context) {
@@ -34,21 +37,59 @@ public class FavoritesRepositoryImpl implements FavoritesRepository {
             return gson.fromJson(streamReader, type);
         } catch (FileNotFoundException e) {
             Log.e("get f", "Файл не найден, создаю новый");
-            List<List<AppShortcut>> newFavorites = createFavorites(); // возвращает структуру
+            List<List<AppShortcut>> newFavorites = createFavorites();
             saveFavorites(newFavorites);
-            return newFavorites;   // ✅ без рекурсии
+            return newFavorites;
         } catch (IOException ex) {
             Log.e("get f", "Ошибка ввода-вывода", ex);
-            return new ArrayList<>();   // безопасное значение по умолчанию
+            throw new RuntimeException(ex);
         }
     }
 
-    // Новый метод – возвращает созданную структуру
+    @Override
+    public void addFavorite(int i, int j, AppShortcut shortcut) {
+        List<List<AppShortcut>> favorites = getFavorites();
+        if (favorites == null || i < 0 || i >= favorites.size() || j < 0 || j >= favorites.get(i).size()) {
+            throw new IndexOutOfBoundsException("Invalid index: page=" + i + ", position=" + j);
+        }
+        favorites.get(i).set(j, shortcut);
+        saveFavorites(favorites);
+    }
+
+    @Override
+    public void removeFavorite(int i, int j) {
+        addFavorite(i, j, null);
+    }
+
+    @Override
+    public boolean isFavoriteExists(String packageName) {
+        if (packageName == null) return false;
+        List<List<AppShortcut>> favorites = getFavorites();
+        if (favorites == null) return false;
+        for (List<AppShortcut> page : favorites) {
+            for (AppShortcut shortcut : page) {
+                if (shortcut != null && packageName.equals(shortcut.getPackageName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public AppShortcut getFavorite(int i, int j) {
+        List<List<AppShortcut>> favorites = getFavorites();
+        if (favorites == null || i < 0 || i >= favorites.size() || j < 0 || j >= favorites.get(i).size()) {
+            throw new IndexOutOfBoundsException("Invalid index: page=" + i + ", position=" + j);
+        }
+        return favorites.get(i).get(j);
+    }
+
     private List<List<AppShortcut>> createFavorites() {
         List<List<AppShortcut>> favorites = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < PAGE_COUNT; i++) {
             List<AppShortcut> page = new ArrayList<>();
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < ITEMS_PER_PAGE; j++) {
                 page.add(null);
             }
             favorites.add(page);
@@ -68,5 +109,5 @@ public class FavoritesRepositoryImpl implements FavoritesRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    } // TODO решить остальные проблемы 
+    }
 }

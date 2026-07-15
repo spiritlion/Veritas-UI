@@ -28,20 +28,10 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     private ViewPagerPagesAdapter.OnItemClickListener listener;
     private ViewPagerPagesAdapter.OnItemMenuClickListener menuListener;
     private final GetAppIconUseCase getAppIconUseCase;
-    private int pageIndex;
-    private int columnCount;
+    private final int pageIndex;
+    private final int columnCount;
     private PopupMenu currentPopup;
-    private DragDropListener dragDropListener;
-    private DragEdgeListener dragEdgeListener;
     private int itemHeight = RecyclerView.LayoutParams.WRAP_CONTENT;
-
-    public interface DragEdgeListener {
-        void onDragEdge(int direction);
-    }
-    public interface DragDropListener {
-        void onDrop(int fromPage, int fromRow, int fromCol,
-                    int targetPage, int targetRow, int targetCol);
-    }
 
     public AppAdapter(List<AppShortcut> appsList, GetAppIconUseCase getAppIconUseCase,
                       ViewPagerPagesAdapter.OnItemClickListener listener,
@@ -60,14 +50,6 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
             this.itemHeight = height;
             notifyDataSetChanged();
         }
-    }
-
-    public void setDragEdgeListener(DragEdgeListener listener) {
-        this.dragEdgeListener = listener;
-    }
-
-    public void setDragDropListener(DragDropListener listener) {
-        this.dragDropListener = listener;
     }
 
     @NonNull
@@ -92,9 +74,6 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
                 holder.itemView.getResources()
         ));
 
-        // Клик, долгое нажатие (меню) и drag теперь обрабатывает один переиспользуемый
-        // LongPressDragTouchListener — отдельный setOnClickListener больше не нужен,
-        // т.к. обычный тап тоже приходит через onClick() колбэка.
         int row = position / columnCount;
         int col = position % columnCount;
         holder.app.setOnTouchListener(new LongPressDragTouchListener(new LongPressDragTouchListener.Callback() {
@@ -143,6 +122,10 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         this.listener = listener;
     }
 
+    public void setMenuListener(ViewPagerPagesAdapter.OnItemMenuClickListener menuListener) {
+        this.menuListener = menuListener;
+    }
+
     private void showAppMenu(View view, AppShortcut app, int row, int col) {
         if (currentPopup != null) {
             currentPopup.dismiss();
@@ -153,6 +136,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
             int id = item.getItemId();
             if (id == R.id.menu_item_uninstall) {
                 if (menuListener != null) menuListener.onUninstallClick(app.getPackageName());
+                return true;
             } else if (id == R.id.menu_item_about) {
                 if (menuListener != null) menuListener.onInfoClick(app.getPackageName());
                 return true;

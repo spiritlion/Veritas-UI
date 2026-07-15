@@ -62,11 +62,17 @@ public class HomePageFragment extends Fragment {
         return fragment;
     }
 
-    public void setOnItemClickListener(ViewPagerPagesAdapter.OnItemClickListener listener, ViewPagerPagesAdapter.OnItemMenuClickListener menuListener) {
+    public void setOnItemClickListener(ViewPagerPagesAdapter.OnItemClickListener listener) {
         this.listener = listener;
-        this.menuListener = menuListener;
         if (adapter != null) {
             adapter.setListener(listener);
+        }
+    }
+
+    public void setOnItemMenuClickListener(ViewPagerPagesAdapter.OnItemMenuClickListener menuListener) {
+        this.menuListener = menuListener;
+        if (adapter != null) {
+            adapter.setMenuListener(menuListener);
         }
     }
 
@@ -91,16 +97,6 @@ public class HomePageFragment extends Fragment {
         HomeViewModel viewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
 
         adapter = new AppAdapter(null, getAppIconUseCase, listener, menuListener, pageIndex, columnCount);
-
-        adapter.setDragDropListener((fromPage, fromRow, fromCol,
-                                     targetPage, targetRow, targetCol) ->
-                viewModel.moveShortcut(fromPage, fromRow, fromCol,
-                        targetPage, targetRow, targetCol)
-        );
-
-        // Передаём drag-позицию от ViewHolder вверх во ViewModel.
-        // ViewHolder получает DRAG_LOCATION, когда drag находится над конкретной карточкой.
-        adapter.setDragEdgeListener(direction -> viewModel.setDragEdge(direction));
 
         recyclerView.setAdapter(adapter);
 

@@ -15,12 +15,7 @@ public class RemoveFromFavoritesCommand extends NonUndoableCommand<Void> {
 
     @Override
     public Void execute() {
-        var pages = repository.getFavorites();
-        if (page < pages.size()) {
-            var pageList = pages.get(page);
-            if (position < pageList.size()) pageList.set(position, null);
-            repository.saveFavorites(pages);
-        }
+        repository.removeFavorite(page, position);
         return null;
     }
 }

@@ -13,6 +13,4 @@ public interface HomeRepository {
     boolean isShortcutExists(String packageName);
     AppShortcut getShortcut(int i, int j, int k);
     void saveShortcuts(List<List<List<AppShortcut>>> shortcuts);
-
-
 }

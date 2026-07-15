@@ -13,13 +13,19 @@ public abstract class HomeScreenState {
 
     public static final class Content extends HomeScreenState {
         private final List<List<List<AppShortcut>>> apps;
+        private final List<List<AppShortcut>> favApps;
 
-        public Content(List<List<List<AppShortcut>>> apps) {
+        public Content(List<List<List<AppShortcut>>> apps, List<List<AppShortcut>> favApps) {
             this.apps = apps;
+            this.favApps = favApps;
         }
 
         public List<List<List<AppShortcut>>> getApps() {
             return apps;
+        }
+
+        public List<List<AppShortcut>> getFavApps() {
+            return favApps;
         }
     }
 

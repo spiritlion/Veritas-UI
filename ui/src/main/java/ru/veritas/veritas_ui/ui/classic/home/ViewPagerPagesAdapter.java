@@ -57,7 +57,8 @@ public class ViewPagerPagesAdapter extends FragmentStateAdapter {
     public Fragment createFragment(int position) {
         HomePageFragment fragment = HomePageFragment.newInstance(position, columnCount,
                 getAppIconUseCase, openAppInfoUseCase);
-        fragment.setOnItemClickListener(listener, menuListener);
+        fragment.setOnItemClickListener(listener);
+        fragment.setOnItemMenuClickListener(menuListener);
         return fragment;
     }
 

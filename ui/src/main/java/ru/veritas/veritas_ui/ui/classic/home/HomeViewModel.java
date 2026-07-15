@@ -78,6 +78,7 @@ public class HomeViewModel extends ViewModel {
 
     public void removeFromFavorites(int page, int pos) {
         execute(favoritesCommandFactory.createRemoveFromFavoritesCommand(page, pos));
+        toastMessage.postValue(ToastData.info(page + ":" + pos));
     }
 
     public void swapFavorites(int srcPage, int srcPos, int dstPage, int dstPos) {
@@ -122,7 +123,8 @@ public class HomeViewModel extends ViewModel {
 
     private void refreshAllData() {
         List<List<List<AppShortcut>>> shortcuts = useCaseFactory.getGetShortcutsUseCase().invoke();
-        state.postValue(new HomeScreenState.Content(shortcuts));
+        List<List<AppShortcut>> favorites = useCaseFactory.getGetFavoritesUseCase().invoke();
+        state.postValue(new HomeScreenState.Content(shortcuts, favorites));
 
         List<List<AppShortcut>> rawFavorites = useCaseFactory.getGetFavoritesUseCase().invoke();
         favoritesPages.postValue(convertToPages(rawFavorites));
